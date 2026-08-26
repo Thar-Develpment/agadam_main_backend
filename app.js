@@ -16,6 +16,7 @@ app.get('/', (req, res) => {
     res.json({ status: 0.1 })
 })
 
+app.use('/main',require('./routes/auth'))
 app.use('/image', subDomainRouter)
 
 app.listen(PORT, () => {
