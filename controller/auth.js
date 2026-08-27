@@ -3,17 +3,13 @@ const query = require("../model/db");
 
 exports.registerDomain = async (req, res) => {
   try {
-
+    // Validation
     const v = new Validator(req.body, {
-      name: "required|string|maxLength:150",
+      shop_name: "required|string|maxLength:10",
+      owner_name: "required|string|maxLength:150",
       email: "required|email|maxLength:255",
-      template: "required|string|maxLength:100",
-      logo: "nullable|url",
-      primary_color: "nullable|string",
-      secondary_color: "nullable|string",
-      hero_title: "nullable|string|maxLength:255",
-      hero_description: "nullable|string|maxLength:1000",
-      hero_image: "nullable|url",
+      password: "nullable|string",
+      city: "required|string|maxLength:12",
     });
 
     const matched = await v.check();
@@ -22,97 +18,86 @@ exports.registerDomain = async (req, res) => {
       return res.status(422).json({
         success: false,
         message: "Validation failed",
-        errors: v.errors,
+        errors:  Object.values(v.errors),
       });
     }
 
+    // Get values from request body
     const {
-      name,
+      shop_name,
+      owner_name,
       email,
-      template,
-      logo,
-      primary_color,
-      secondary_color,
-      hero_title,
-      hero_description,
-      hero_image,
+      password,
+      city,
     } = req.body;
 
+    // Check whether shop already exists
     query(
-      "SELECT id FROM am_register WHERE name = ?",
-      [name],
+      "SELECT id FROM am_register WHERE shop_name = ?",
+      [shop_name],
       (error, tenant) => {
         if (error) {
           console.error("Database error:", error);
 
           return res.status(500).json({
-            success: 0,
-            message: "Failed to register!",
+            success: false,
+            message: "Failed to check shop!",
           });
         }
 
+        // Shop already exists
         if (tenant.length > 0) {
           return res.status(409).json({
-            success: 0,
-            message: "User already exists",
+            success: false,
+            message: "Shop already exists",
           });
         }
 
+        // Create subdomain
+        const subdomain = `${shop_name.toLowerCase()}.aadagam.com`;
+
+        // Data to insert
+        const reqData = {
+          shop_name: shop_name,
+          owner_name: owner_name,
+          email: email,
+          password: password,
+          city: city,
+          subdomain: subdomain,
+        };
+
+        // Insert into database
         query(
-          `INSERT INTO am_register
-          (
-            name,
-            email,
-            subdomain,
-            template,
-            logo,
-            primary_color,
-            secondary_color,
-            hero_title,
-            hero_description,
-            hero_image
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            name,
-            email,
-            `${name}.aadagam.com`,
-            template,
-            logo || null,
-            primary_color || null,
-            secondary_color || null,
-            hero_title || null,
-            hero_description || null,
-            hero_image || null,
-          ],
+          "INSERT INTO am_register SET ?",
+          reqData,
           (error, result) => {
             if (error) {
               console.error("Insert error:", error);
 
               return res.status(500).json({
-                success: 0,
+                success: false,
                 message: "Registration failed",
               });
             }
 
             return res.status(201).json({
-              success: 1,
+              success: true,
               message: "Registered successfully",
               data: {
                 id: result.insertId,
-                name,
-                domain: `${name}.aadagam.com`,
+                shop_name: shop_name,
+                domain: subdomain,
               },
             });
-          },
+          }
         );
-      },
+      }
     );
   } catch (error) {
     console.error("Register domain error:", error);
 
     return res.status(500).json({
-      success: 0,
+      success: false,
       message: "Internal server error",
     });
   }
