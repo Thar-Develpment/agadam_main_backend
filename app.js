@@ -6,17 +6,18 @@ const app = express()
 
 app.use(express.json())
 
-const PORT = config.PORT
-const subDomainRouter = require('./routes/sub_domain')
-
 app.use(cors())
 app.use(helmet())
+
+const PORT = config.PORT
+const authRouter = require('./routes/auth')
+const subDomainRouter = require('./routes/sub_domain')
 
 app.get('/', (req, res) => {
     res.json({ status: 0.1 })
 })
 
-app.use('/main',require('./routes/auth'))
+app.use('/auth', authRouter)
 app.use('/image', subDomainRouter)
 
 app.listen(PORT, () => {

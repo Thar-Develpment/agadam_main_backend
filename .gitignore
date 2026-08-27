@@ -3,3 +3,6 @@
 node_modules
 logs
 package-lock.json
+config/local.js
+config/dev.js
+config/prod.js

@@ -1,9 +1,10 @@
 const { Validator } = require("node-input-validator");
 const query = require("../model/db");
+const { generateJwtToken } = require("../helper/jwt");
 
-const registerDomain = async (req, res) => {
+exports.registerDomain = async (req, res) => {
   try {
-    // 1. Input validation
+
     const v = new Validator(req.body, {
       name: "required|string|maxLength:150",
       email: "required|email|maxLength:255",
@@ -26,7 +27,6 @@ const registerDomain = async (req, res) => {
       });
     }
 
-    // 2. Get request data
     const {
       name,
       email,
@@ -39,7 +39,6 @@ const registerDomain = async (req, res) => {
       hero_image,
     } = req.body;
 
-    // 3. Check subdomain already exists
     query(
       "SELECT id FROM am_register WHERE name = ?",
       [name],
@@ -48,19 +47,18 @@ const registerDomain = async (req, res) => {
           console.error("Database error:", error);
 
           return res.status(500).json({
-            success: false,
+            success: 0,
             message: "Database error",
           });
         }
 
         if (tenant.length > 0) {
           return res.status(409).json({
-            success: false,
+            success: 0,
             message: "Subdomain already exists",
           });
         }
 
-        // 4. Insert tenant
         query(
           `INSERT INTO am_register
           (
@@ -75,11 +73,11 @@ const registerDomain = async (req, res) => {
             hero_description,
             hero_image
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             name,
             email,
-            `${name}.maindomain.com`,
+            `${name}.aadagam.com`,
             template,
             logo || null,
             primary_color || null,
@@ -93,19 +91,18 @@ const registerDomain = async (req, res) => {
               console.error("Insert error:", error);
 
               return res.status(500).json({
-                success: false,
+                success: 0,
                 message: "Registration failed",
               });
             }
 
-            // 5. Success response
             return res.status(201).json({
-              success: true,
+              success: 1,
               message: "Registered successfully",
               data: {
                 id: result.insertId,
                 name,
-                domain: `${name}.maindomain.com`,
+                domain: `${name}.aadagam.com`,
               },
             });
           },
@@ -116,10 +113,8 @@ const registerDomain = async (req, res) => {
     console.error("Register domain error:", error);
 
     return res.status(500).json({
-      success: false,
+      success: 0,
       message: "Internal server error",
     });
   }
 };
-
-module.exports = {registerDomain};
