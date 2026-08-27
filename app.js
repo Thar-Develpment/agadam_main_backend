@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/auth', authRouter)
-app.use('/image', subDomainRouter)
+app.use('/user', subDomainRouter)
 
 app.listen(PORT, () => {
     console.log(`Server running`);

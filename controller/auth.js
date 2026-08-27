@@ -1,6 +1,5 @@
 const { Validator } = require("node-input-validator");
 const query = require("../model/db");
-const { generateJwtToken } = require("../helper/jwt");
 
 exports.registerDomain = async (req, res) => {
   try {
@@ -48,14 +47,14 @@ exports.registerDomain = async (req, res) => {
 
           return res.status(500).json({
             success: 0,
-            message: "Database error",
+            message: "Failed to register!",
           });
         }
 
         if (tenant.length > 0) {
           return res.status(409).json({
             success: 0,
-            message: "Subdomain already exists",
+            message: "User already exists",
           });
         }
 
