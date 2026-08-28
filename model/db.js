@@ -5,7 +5,8 @@ const db = mysql.createPool({
   host: config.dbInfo.host,
   user: config.dbInfo.user,
   password: config.dbInfo.password,
-  database: config.dbInfo.database
+  database: config.dbInfo.database,
+  multipleStatements: true
 });
 
 const query = (sql, params, callback) => {
