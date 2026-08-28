@@ -16,7 +16,7 @@ exports.registerDomain = async (req, res) => {
 
     if (!matched) {
       return res.status(422).json({
-        success: false,
+        success: 0,
         message: "Validation failed",
         errors:  Object.values(v.errors),
       });
@@ -40,7 +40,7 @@ exports.registerDomain = async (req, res) => {
           console.error("Database error:", error);
 
           return res.status(500).json({
-            success: false,
+            success: 0,
             message: "Failed to check shop!",
           });
         }
@@ -48,7 +48,7 @@ exports.registerDomain = async (req, res) => {
         // Shop already exists
         if (tenant.length > 0) {
           return res.status(409).json({
-            success: false,
+            success: 0,
             message: "Shop already exists",
           });
         }
@@ -75,13 +75,13 @@ exports.registerDomain = async (req, res) => {
               console.error("Insert error:", error);
 
               return res.status(500).json({
-                success: false,
+                success: 0,
                 message: "Registration failed",
               });
             }
 
             return res.status(201).json({
-              success: true,
+              success: 1,
               message: "Registered successfully",
               data: {
                 id: result.insertId,
@@ -97,7 +97,7 @@ exports.registerDomain = async (req, res) => {
     console.error("Register domain error:", error);
 
     return res.status(500).json({
-      success: false,
+      success: 0,
       message: "Internal server error",
     });
   }
