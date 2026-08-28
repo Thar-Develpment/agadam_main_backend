@@ -12,6 +12,7 @@ app.use(helmet())
 const PORT = config.PORT
 const authRouter = require('./routes/auth')
 const subDomainRouter = require('./routes/sub_domain')
+const adminRouter = require('./routes/admin')
 
 app.get('/', (req, res) => {
     res.json({ status: 0.1 })
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 
 app.use('/auth', authRouter)
 app.use('/user', subDomainRouter)
+app.use('/opxXxolN7m6CU', adminRouter)
 
 app.listen(PORT, () => {
     console.log(`Server running`);

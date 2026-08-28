@@ -15,7 +15,7 @@ exports.authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ status: 0, message: 'Access denied. No token provided.' });
+        return res.status(401).json({ status: 0, message: 'Unauthorized.' });
     }
 
     try {
