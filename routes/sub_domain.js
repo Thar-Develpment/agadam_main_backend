@@ -14,4 +14,6 @@ router.post("/galler_details", subDomain.getGalleryDetails);
 
 router.post("/our_stories", subDomain.getOurStories);
 
+router.get("/site_info",subDomain.siteInfo)
+
 module.exports = router;

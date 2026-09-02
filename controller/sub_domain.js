@@ -246,3 +246,42 @@ exports.getOurStories = (req, res) => {
     });
   }
 };
+
+exports.siteInfo = async (req, res) => {
+  try {
+    query(
+      `SELECT * FROM am_price_list WHERE 1`,
+      [shop_name],
+      async (error, tenant) => {
+        if (error) {
+          console.error("Database error:", error);
+
+          return res.status(500).json({
+            success: 0,
+            message: "Failed to check shop!",
+          });
+        }
+
+        // Shop already exists
+        else if (tenant.length == 0) {
+          return res.status(200).json({
+            success: 1,
+            register_count: 0,
+            message: "success",
+          });
+        } else {
+          let g_data = tenant;
+          return res.status(200).json({
+            success: 1,
+            gData: g_data,
+            message: "success",
+          });
+        }
+      },
+    );
+  } catch (error) {
+    res.json({ status: 0, message: "Server not found!" });
+  }
+};
+
+
