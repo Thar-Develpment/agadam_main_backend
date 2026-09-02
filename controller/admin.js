@@ -459,7 +459,7 @@ exports.getSingleVideo = async (req, res) => {
 
 }
 
-exports.updateGallery = async (req, res) => {
+exports.updateVideo = async (req, res) => {
 
     let reqData = req.body;
 
