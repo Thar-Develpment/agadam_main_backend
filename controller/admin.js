@@ -860,16 +860,18 @@ exports.priceUpdateApi = async (req, res) => {
             });
         }
 
-        let insertQuery = `UPDATE am_price_list SET ? WHERE purity = ? and material = ?`;
+        let updateQuery = `UPDATE am_price_list SET ? WHERE purity = ? and material = ?`;
+
+        const values = { price: reqData.price }
 
         query(
-            insertQuery,
-            [reqData.price, reqData.purity, reqData.material],
+            updateQuery,
+            [values, reqData.purity, reqData.material],
             (err, updateResult) => {
                 if (err) {
-                    return res.json({ status: 0, message: "Failed to update story" });
+                    return res.json({ status: 0, message: "Failed to update price" });
                 } else {
-                    return res.json({ status: 1, message: "Story updated successfully" });
+                    return res.json({ status: 1, message: "Price updated successfully" });
                 }
             },
         );
@@ -880,9 +882,9 @@ exports.priceUpdateApi = async (req, res) => {
 exports.adminDashboard = async (req, res) => {
     try {
         query(
-            `SELECT COUNT(id) as resgister_count FROM am_register WHERE 1;SELECT * FROM am_price_list WHERE 1`,
-            [shop_name],
+            `SELECT COUNT(id) as register_count FROM am_register;SELECT material,purity,price FROM am_price_list`,
             async (error, tenant) => {
+                console.log("tenant: ", tenant);
                 if (error) {
                     console.error("Database error:", error);
 
@@ -890,28 +892,19 @@ exports.adminDashboard = async (req, res) => {
                         success: 0,
                         message: "Failed to check shop!",
                     });
-                }
-
-                // Shop already exists
-                else if (tenant.length == 0) {
-                    return res.status(200).json({
-                        success: 1,
-                        register_count: 0,
-                        message: "success",
-                    });
                 } else {
 
-                    let g_data = tenant[0][1]
+                    let priceData = tenant[1]
                     return res.status(200).json({
                         success: 1,
                         register_count: tenant[0][0].register_count,
-                        gData: g_data,
+                        priceData: priceData,
                         message: "success",
                     });
                 }
             },
         );
     } catch (error) {
-        res.json({ status: 0, message: "Server not found!" });
+        res.json({ status: 0, message: "Something went wrong!" });
     }
 };

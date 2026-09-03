@@ -247,8 +247,7 @@ exports.getOurStories = (req, res) => {
 exports.siteInfo = async (req, res) => {
   try {
     query(
-      `SELECT * FROM am_price_list WHERE 1`,
-      [shop_name],
+      `SELECT * FROM am_price_list`,
       async (error, tenant) => {
         if (error) {
           console.error("Database error:", error);
@@ -260,23 +259,23 @@ exports.siteInfo = async (req, res) => {
         }
 
         // Shop already exists
-        else if (tenant.length == 0) {
+        else if (tenant?.length == 0) {
           return res.status(200).json({
             success: 1,
             register_count: 0,
             message: "success",
           });
         } else {
-          let g_data = tenant;
+          let priceData = tenant;
           return res.status(200).json({
             success: 1,
-            gData: g_data,
+            priceData: priceData,
             message: "success",
           });
         }
       },
     );
   } catch (error) {
-    res.json({ status: 0, message: "Server not found!" });
+    res.json({ status: 0, message: "Something went wrong!" });
   }
 };

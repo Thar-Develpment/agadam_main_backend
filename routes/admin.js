@@ -35,7 +35,7 @@ router.post('/get_single_our_story', authenticateToken, admin.getSingleOurStory)
 router.post('/update_our_story', authenticateToken, admin.updateOurStory)
 
 router.get('/dash_board',authenticateToken,admin.adminDashboard)
-router.get('/price_update',authenticateToken,admin.priceUpdateApi)
+router.post('/price_update',authenticateToken,admin.priceUpdateApi)
 
 
 module.exports = router
