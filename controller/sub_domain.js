@@ -1,9 +1,6 @@
 const { Validator } = require("node-input-validator");
 const query = require("../model/db");
 
-exports.getImage = (req, res) => {
-  res.json({ status: 1, data: ["img1", "img2", "img3"] });
-};
 
 exports.askQuestion = async (req, res) => {
   let reqData = req.body;
@@ -283,5 +280,3 @@ exports.siteInfo = async (req, res) => {
     res.json({ status: 0, message: "Server not found!" });
   }
 };
-
-

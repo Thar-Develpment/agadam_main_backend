@@ -4,6 +4,8 @@ const admin = require('../controller/admin')
 const { authenticateToken } = require('../helper/jwt')
 
 
+router.post('/login', admin.login)
+
 router.post('/add_category', authenticateToken, admin.addCategory)
 router.post('/get_all_category', authenticateToken, admin.getAllCategory)
 router.post('/get_single_category', authenticateToken, admin.getSingleCategory)

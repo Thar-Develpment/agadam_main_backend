@@ -11,10 +11,6 @@ exports.generateJwtToken = (user) => {
 
 exports.authenticateToken = (req, res, next) => {
 
-    req.user = 1;
-    next();
-    return
-
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
