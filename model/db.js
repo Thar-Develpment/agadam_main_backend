@@ -13,6 +13,7 @@ const db = mysql.createPool({
 const query = (sql, params, callback) => {
   db.query(sql, params, (error, result) => {
     if (error) {
+      console.error("DB QUERY ERROR:", error.code, error.message);
       return callback(error, null);
     }
 
