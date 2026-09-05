@@ -908,3 +908,78 @@ exports.adminDashboard = async (req, res) => {
         res.json({ status: 0, message: "Something went wrong!" });
     }
 };
+
+exports.getAllTenants = async (req, res) => {
+    try {
+        const sql = `SELECT id, shop_name, owner_name, email, city, subdomain, IFNULL(status, 1) as status, created_at FROM am_register ORDER BY id DESC`;
+        query(sql, [], (err, results) => {
+            if (err) {
+                console.error("Database error in getAllTenants:", err);
+                if (err.code === "ER_BAD_FIELD_ERROR" || (err.message && err.message.includes("status"))) {
+                    query(`ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`, [], (alterErr) => {
+                        query(sql, [], (retryErr, retryResults) => {
+                            if (retryErr) {
+                                return res.status(500).json({ status: 0, message: "Database error" });
+                            }
+                            return res.status(200).json({
+                                status: 1,
+                                totalRecords: retryResults.length,
+                                data: retryResults
+                            });
+                        });
+                    });
+                    return;
+                }
+                return res.status(500).json({ status: 0, message: "Database error: " + err.message });
+            }
+            return res.status(200).json({
+                status: 1,
+                totalRecords: results.length,
+                data: results
+            });
+        });
+    } catch (error) {
+        return res.status(500).json({ status: 0, message: "Internal server error" });
+    }
+};
+
+exports.toggleTenantStatus = async (req, res) => {
+    try {
+        const { id, status } = req.body;
+        if (id === undefined || status === undefined) {
+            return res.status(400).json({ status: 0, message: "ID and status are required" });
+        }
+
+        const newStatus = Number(status);
+        const tenantId = Number(id);
+
+        const updateSql = `UPDATE am_register SET status = ? WHERE id = ?`;
+
+        query(updateSql, [newStatus, tenantId], (err, results) => {
+            if (err) {
+                console.error("Database error in toggleTenantStatus:", err);
+                if (err.code === "ER_BAD_FIELD_ERROR" || (err.message && err.message.includes("status"))) {
+                    query(`ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`, [], (alterErr) => {
+                        query(updateSql, [newStatus, tenantId], (retryErr, retryResults) => {
+                            if (retryErr) {
+                                return res.status(500).json({ status: 0, message: "Failed to update tenant status in database" });
+                            }
+                            return res.status(200).json({
+                                status: 1,
+                                message: "Tenant status updated successfully"
+                            });
+                        });
+                    });
+                    return;
+                }
+                return res.status(500).json({ status: 0, message: "Failed to update tenant status: " + err.message });
+            }
+            return res.status(200).json({
+                status: 1,
+                message: "Tenant status updated successfully"
+            });
+        });
+    } catch (error) {
+        return res.status(500).json({ status: 0, message: "Internal server error" });
+    }
+};

@@ -37,5 +37,8 @@ router.post('/update_our_story', authenticateToken, admin.updateOurStory)
 router.get('/dash_board',authenticateToken,admin.adminDashboard)
 router.post('/price_update',authenticateToken,admin.priceUpdateApi)
 
+router.post('/get_all_tenants', admin.getAllTenants)
+router.post('/toggle_tenant_status', admin.toggleTenantStatus)
+
 
 module.exports = router
