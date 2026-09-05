@@ -8,17 +8,12 @@ const app = express()
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    credentials: false
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
-
-// Preflight OPTIONS handler for all endpoints
-app.options('*', cors());
 
 // Security headers without blocking cross-origin requests
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // Body parsers
