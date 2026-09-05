@@ -4,10 +4,26 @@ const helmet = require('helmet')
 const config = require('./config/config')
 const app = express()
 
-app.use(express.json())
+// Explicit CORS configuration for cross-origin requests from Vercel & custom subdomains
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    credentials: false
+}));
 
-app.use(cors())
-app.use(helmet())
+// Preflight OPTIONS handler for all endpoints
+app.options('*', cors());
+
+// Security headers without blocking cross-origin requests
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+}));
+
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const PORT = config.PORT
 const authRouter = require('./routes/auth')
