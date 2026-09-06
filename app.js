@@ -15,8 +15,27 @@ const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.2 })
+    res.json({ status: 0.3 })
 })
+
+const dns = require('dns').promises;
+
+app.get('/debug-db', async (req, res) => {
+  try {
+    const result = await dns.lookup('mysql.railway.internal');
+
+    res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      code: error.code,
+      message: error.message
+    });
+  }
+});
 
 app.use('/auth', authRouter)
 app.use('/user', subDomainRouter)
