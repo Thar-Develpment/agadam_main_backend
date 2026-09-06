@@ -22,7 +22,7 @@ const dns = require('dns').promises;
 
 app.get('/debug-db', async (req, res) => {
   try {
-    const result = await dns.lookup('mysql.railway.internal');
+    const result = await dns.lookup('tokaido.proxy.rlwy.net');
 
     res.json({
       success: true,
