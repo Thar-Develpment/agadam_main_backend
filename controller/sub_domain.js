@@ -6,7 +6,7 @@ exports.askQuestion = async (req, res) => {
   let reqData = req.body;
 
   const v = new Validator(reqData, {
-    subdomain: "required|string|maxLength:30",
+    subdomain: "required|string|maxLength:100",
     customer_name: "required|string|maxLength:20",
     email: "required|email|maxLength:255",
     query: "required|maxLength:1000",
