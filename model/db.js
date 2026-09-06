@@ -2,7 +2,7 @@ const mysql = require("mysql2");
 const config = require('../config/config')
 
 const db = mysql.createPool({
-  host: "mysql.railway.internal",
+  host: "tokaido.proxy.rlwy.net",
   user: "root",
   password: "hVSIeFgniyOmMhyrziqxOiLcozsEnVQo",
   database: "railway",
