@@ -15,7 +15,7 @@ const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.1 })
+    res.json({ status: 0.2 })
 })
 
 app.use('/auth', authRouter)
