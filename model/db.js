@@ -2,10 +2,10 @@ const mysql = require("mysql2");
 const config = require('../config/config')
 
 const db = mysql.createPool({
-  host: config.dbInfo.host,
-  user: config.dbInfo.user,
-  password: config.dbInfo.password,
-  database: config.dbInfo.database,
+  host: "mysql.railway.internal",
+  user: "root",
+  password: "hVSIeFgniyOmMhyrziqxOiLcozsEnVQo",
+  database: "railway",
   multipleStatements: true
 });
 
