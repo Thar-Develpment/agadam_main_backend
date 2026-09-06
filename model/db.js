@@ -6,6 +6,7 @@ const db = mysql.createPool({
   user: "root",
   password: "hVSIeFgniyOmMhyrziqxOiLcozsEnVQo",
   database: "railway",
+  port:"3306",
   multipleStatements: true
 });
 
