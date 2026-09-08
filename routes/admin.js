@@ -2,6 +2,23 @@ const express = require('express')
 const router = express.Router()
 const admin = require('../controller/admin')
 const { authenticateToken } = require('../helper/jwt')
+const multer = require("multer");
+const image =require('../controller/image_upload')
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB per image
+    files: 10, // max 10 images
+  },
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowed.includes(file.mimetype))
+      return cb(new Error("Only JPG, PNG and WEBP allowed"));
+
+    cb(null, true);
+  },
+});
 
 
 router.post('/login', admin.login)
@@ -39,6 +56,6 @@ router.post('/price_update',authenticateToken,admin.priceUpdateApi)
 
 router.post('/get_all_tenants', admin.getAllTenants)
 router.post('/toggle_tenant_status', admin.toggleTenantStatus)
+router.post("/upload",authenticateToken,upload.array("images", 10),image.imageUpload);
 
-
-module.exports = router
+module.exports = router;

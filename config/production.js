@@ -6,6 +6,14 @@ module.exports = {
     user: process.env.MYSQLUSER || process.env.DB_USER || "root",
     password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "",
     database: process.env.MYSQLDATABASE || process.env.DB_NAME || "aadagam_db",
-    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
-  }
+    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+  },
+
+  s3info: {
+    S3_ENDPOINT: "https://sgp1.digitaloceanspaces.com",
+    S3_REGION: "sgp1",
+    S3_BUCKET: "your-space-name",
+    S3_ACCESS_KEY: "your_access_key",
+    S3_SECRET_KEY: "your_secret_key",
+  },
 };
