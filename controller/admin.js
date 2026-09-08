@@ -966,17 +966,17 @@ exports.toggleTenantStatus = async (req, res) => {
                             }
                             return res.status(200).json({
                                 status: 1,
-                                message: "Tenant status updated successfully"
+                                message: "Status updated successfully"
                             });
                         });
                     });
                     return;
                 }
-                return res.status(500).json({ status: 0, message: "Failed to update tenant status: " + err.message });
+                return res.status(500).json({ status: 0, message: "Failed to update status: " + err.message });
             }
             return res.status(200).json({
                 status: 1,
-                message: "Tenant status updated successfully"
+                message: "Status updated successfully"
             });
         });
     } catch (error) {

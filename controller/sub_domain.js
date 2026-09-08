@@ -257,8 +257,6 @@ exports.siteInfo = async (req, res) => {
             message: "Failed to check shop!",
           });
         }
-
-        // Shop already exists
         else if (tenant?.length == 0) {
           return res.status(200).json({
             success: 1,
@@ -266,10 +264,15 @@ exports.siteInfo = async (req, res) => {
             message: "success",
           });
         } else {
+
           let priceData = tenant;
+
+          const siteInfoData = await getSiteInfo(req?.body?.shop_name)
+
           return res.status(200).json({
             success: 1,
             priceData: priceData,
+            siteInfoData: siteInfoData,
             message: "success",
           });
         }
@@ -278,4 +281,33 @@ exports.siteInfo = async (req, res) => {
   } catch (error) {
     res.json({ status: 0, message: "Something went wrong!" });
   }
+};
+
+
+
+async function getSiteInfo(shopName) {
+
+  return new Promise((resolve, reject) => {
+
+    let getQuery = `SELECT * FROM am_register WHERE shop_name = ?`;
+
+    if (!shopName) {
+      return resolve({})
+    }
+
+    query(getQuery, [shopName], (err, data) => {
+      if (err) {
+        return resolve({});
+      } else if (data?.length == 0) {
+        return resolve({});
+      } else {
+        let objLen = Object.keys(data[0])
+        if (objLen > 0) {
+          delete data[0].password
+        }
+        return resolve(data[0]);
+      }
+    });
+  })
+
 };
