@@ -1,5 +1,6 @@
 module.exports = {
   PORT: process.env.PORT || 5000,
+  PRIMARY_DOMAIN: process.env.PRIMARY_DOMAIN || "aadagam.com",
   JWT_SECRET: process.env.JWT_SECRET || "aadagam_jwt_secret_key_12345",
   dbInfo: {
     host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",

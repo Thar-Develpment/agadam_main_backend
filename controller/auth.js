@@ -1,5 +1,6 @@
 const { Validator } = require("node-input-validator");
 const query = require("../model/db");
+const config = require("../config/config");
 
 exports.registerDomain = async (req, res) => {
   try {
@@ -54,7 +55,8 @@ exports.registerDomain = async (req, res) => {
         }
 
         // Create subdomain
-        const subdomain = `${shop_name.toLowerCase()}.aadagam.com`;
+        const primaryDomain = config.PRIMARY_DOMAIN || "aadagam.com";
+        const subdomain = `${shop_name.toLowerCase()}.${primaryDomain}`;
 
         // Data to insert
         const reqData = {
