@@ -6,7 +6,7 @@ exports.registerDomain = async (req, res) => {
   try {
     // Validation
     const v = new Validator(req.body, {
-      shop_name: "required|string|maxLength:10",
+      shop_name: "required|string|maxLength:50",
       owner_name: "required|string|maxLength:150",
       email: "required|email|maxLength:255",
       password: "nullable|string",
