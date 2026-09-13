@@ -59,5 +59,6 @@ router.post('/toggle_tenant_status', admin.toggleTenantStatus)
 router.post("/upload", authenticateToken, upload.array("images", 10), image.imageUpload);
 
 router.post('/update_site_info', authenticateToken, admin.updateSiteInfo)
+router.post('/activate_subdomain', authenticateToken, admin.activateSubdomain)
 
 module.exports = router;

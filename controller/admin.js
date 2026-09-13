@@ -1011,7 +1011,7 @@ exports.updateSiteInfo = async (req, res) => {
         });
     }
 
-    let insertQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+    let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
 
     let payload = {
         city,
@@ -1021,12 +1021,48 @@ exports.updateSiteInfo = async (req, res) => {
         whatsapp_no
     };
 
-    query(insertQuery, [payload, subdomain], (err, data) => {
+    query(updateQuery, [payload, subdomain], (err, data) => {
         if (err) {
             const errMsg = "Failed to update site info";
             return res.json({ status: 0, message: errMsg });
         } else {
             return res.json({ status: 1, message: "Site info updated successfully" });
+        }
+    });
+};
+
+
+
+// when payment done
+
+exports.activateSubdomain = async (req, res) => {
+
+    let reqData = req.body;
+
+    const { id } = reqData;
+
+    const v = new Validator(reqData, {
+        id: "required|numeric"
+    });
+
+    const matched = await v.check();
+
+    if (!matched) {
+        return res.status(422).json({
+            success: false,
+            message: "Validation failed",
+            errors: v.errors,
+        });
+    }
+
+    let updateQuery = `UPDATE am_register SET status = ?,payment_at = NOW() WHERE id = ?`;
+
+    query(updateQuery, [1, id], (err, data) => {
+        if (err) {
+            const errMsg = "Failed to activate site";
+            return res.json({ status: 0, message: errMsg });
+        } else {
+            return res.json({ status: 1, message: "Site activated successfully" });
         }
     });
 };
