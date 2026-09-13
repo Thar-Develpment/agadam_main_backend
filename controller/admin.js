@@ -991,13 +991,14 @@ exports.updateSiteInfo = async (req, res) => {
 
     const { subdomain } = req.user;
 
-    const { city, address, phone, contact_us } = reqData;
+    const { city, address, phone, contact_us,whatsapp_no } = reqData;
 
     const v = new Validator(reqData, {
         city: "required|string|maxLength:30",
         address: "required|string|maxLength:30",
         phone: "required|string|maxLength:30",
         contact_us: "required|string|maxLength:30",
+        whatsapp_no: "required|string|maxLength:30",
     });
 
     const matched = await v.check();
@@ -1016,7 +1017,8 @@ exports.updateSiteInfo = async (req, res) => {
         city,
         address,
         phone,
-        contact_us
+        contact_us,
+        whatsapp_no
     };
 
     query(insertQuery, [payload, subdomain], (err, data) => {
