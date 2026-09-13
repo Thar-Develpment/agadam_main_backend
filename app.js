@@ -18,6 +18,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument)
 );
+const basicRouter = require('./routes/basic')
 const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
 
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
     res.json({ status: 0.5 })
 })
 
+app.use('/basic', basicRouter)
 app.use('/auth', authRouter)
 app.use('/user', subDomainRouter)
 app.use('/opxXxolN7m6CU', adminRouter)

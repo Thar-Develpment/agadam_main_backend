@@ -3,7 +3,7 @@ const router = express.Router()
 const admin = require('../controller/admin')
 const { authenticateToken } = require('../helper/jwt')
 const multer = require("multer");
-const image =require('../controller/image_upload')
+const image = require('../controller/image_upload')
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -51,11 +51,13 @@ router.post('/get_all_our_story', authenticateToken, admin.getAllOurStory)
 router.post('/get_single_our_story', authenticateToken, admin.getSingleOurStory)
 router.post('/update_our_story', authenticateToken, admin.updateOurStory)
 
-router.get('/dash_board',authenticateToken,admin.adminDashboard)
-router.post('/price_update',authenticateToken,admin.priceUpdateApi)
+router.get('/dash_board', authenticateToken, admin.adminDashboard)
+router.post('/price_update', authenticateToken, admin.priceUpdateApi)
 
 router.post('/get_all_tenants', admin.getAllTenants)
 router.post('/toggle_tenant_status', admin.toggleTenantStatus)
-router.post("/upload",authenticateToken,upload.array("images", 10),image.imageUpload);
+router.post("/upload", authenticateToken, upload.array("images", 10), image.imageUpload);
+
+router.post('/update_site_info', authenticateToken, admin.updateSiteInfo)
 
 module.exports = router;

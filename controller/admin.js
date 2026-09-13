@@ -983,3 +983,48 @@ exports.toggleTenantStatus = async (req, res) => {
         return res.status(500).json({ status: 0, message: "Internal server error" });
     }
 };
+
+
+exports.updateSiteInfo = async (req, res) => {
+
+    let reqData = req.body;
+
+    const { subdomain } = req.user;
+
+    const { city, address, phone, contact_us } = reqData;
+
+    const v = new Validator(reqData, {
+        city: "required|string|maxLength:30",
+        address: "required|string|maxLength:30",
+        phone: "required|string|maxLength:30",
+        contact_us: "required|string|maxLength:30",
+    });
+
+    const matched = await v.check();
+
+    if (!matched) {
+        return res.status(422).json({
+            success: false,
+            message: "Validation failed",
+            errors: v.errors,
+        });
+    }
+
+    let insertQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+
+    let payload = {
+        city,
+        address,
+        phone,
+        contact_us
+    };
+
+    query(insertQuery, [payload, subdomain], (err, data) => {
+        if (err) {
+            const errMsg = "Failed to update site info";
+            return res.json({ status: 0, message: errMsg });
+        } else {
+            return res.json({ status: 1, message: "Site info updated successfully" });
+        }
+    });
+};
