@@ -17,4 +17,11 @@ module.exports = {
     S3_ACCESS_KEY: "your_access_key",
     S3_SECRET_KEY: "your_secret_key",
   },
+
+  cloudpay: {
+    endpoint: "https://s3.in-west3.purestore.io/",
+    accessKeyId: "8729cf427da7fe45F5T1",
+    secretAccessKey: "JBGfkUewcZOaFNUHX3oXilHGPK4fdWHYwt8YonWl",
+    region: "S3-INWEST3",
+  },
 };

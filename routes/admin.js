@@ -6,19 +6,22 @@ const multer = require("multer");
 const image =require('../controller/image_upload')
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB per image
-    files: 10, // max 10 images
+   limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MB
+    files: 10,
   },
   fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    const allowed = ["image/jpg","image/jpeg", "image/png", "image/webp"];
 
-    if (!allowed.includes(file.mimetype))
-      return cb(new Error("Only JPG, PNG and WEBP allowed"));
-
+  // if (allowed.includes(file.mimetype)) {
     cb(null, true);
+  // } else {
+  //   cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
+  // }
   },
 });
+// const {upload } = require('../helper/upload')
+const { uploadImages } = require("../controller/image_contoller");
 
 
 router.post('/login', admin.login)
@@ -56,6 +59,11 @@ router.post('/price_update',authenticateToken,admin.priceUpdateApi)
 
 router.post('/get_all_tenants', admin.getAllTenants)
 router.post('/toggle_tenant_status', admin.toggleTenantStatus)
-router.post("/upload",authenticateToken,upload.array("images", 10),image.imageUpload);
+
+router.post(
+  "/upload",
+  upload.array("images", 10),
+  uploadImages
+);
 
 module.exports = router;
