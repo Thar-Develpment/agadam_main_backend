@@ -983,3 +983,86 @@ exports.toggleTenantStatus = async (req, res) => {
         return res.status(500).json({ status: 0, message: "Internal server error" });
     }
 };
+
+
+exports.updateSiteInfo = async (req, res) => {
+
+    let reqData = req.body;
+
+    const { subdomain } = req.user;
+
+    const { city, address, phone, contact_us, whatsapp_no } = reqData;
+
+    const v = new Validator(reqData, {
+        city: "required|string|maxLength:30",
+        address: "required|string|maxLength:1500",
+        phone: "required|string|maxLength:15",
+        contact_us: "required|string|maxLength:30",
+        whatsapp_no: "required|string|maxLength:15",
+    });
+
+    const matched = await v.check();
+
+    if (!matched) {
+        return res.status(422).json({
+            success: false,
+            message: "Validation failed",
+            errors: v.errors,
+        });
+    }
+
+    let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+
+    let payload = {
+        city,
+        address,
+        phone,
+        contact_us,
+        whatsapp_no
+    };
+
+    query(updateQuery, [payload, subdomain], (err, data) => {
+        if (err) {
+            const errMsg = "Failed to update site info";
+            return res.json({ status: 0, message: errMsg });
+        } else {
+            return res.json({ status: 1, message: "Site info updated successfully" });
+        }
+    });
+};
+
+
+
+// when payment done
+
+exports.activateSubdomain = async (req, res) => {
+
+    let reqData = req.body;
+
+    const { id } = reqData;
+
+    const v = new Validator(reqData, {
+        id: "required|numeric"
+    });
+
+    const matched = await v.check();
+
+    if (!matched) {
+        return res.status(422).json({
+            success: false,
+            message: "Validation failed",
+            errors: v.errors,
+        });
+    }
+
+    let updateQuery = `UPDATE am_register SET status = ?,payment_at = NOW() WHERE id = ?`;
+
+    query(updateQuery, [1, id], (err, data) => {
+        if (err) {
+            const errMsg = "Failed to activate site";
+            return res.json({ status: 0, message: errMsg });
+        } else {
+            return res.json({ status: 1, message: "Site activated successfully" });
+        }
+    });
+};

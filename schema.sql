@@ -11,6 +11,21 @@ CREATE TABLE IF NOT EXISTS `am_register` (
   `city` VARCHAR(255) NOT NULL,
   `subdomain` VARCHAR(255) NOT NULL,
   `status` TINYINT DEFAULT 1 COMMENT '1 = Active, 0 = Inactive / Suspended',
+  `payment_at` DATETIME DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. am_basic_info
+CREATE TABLE IF NOT EXISTS `am_basic_info` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `shop_name` VARCHAR(255) DEFAULT NULL,
+  `owner_name` VARCHAR(255) DEFAULT NULL,
+  `email` VARCHAR(255) DEFAULT NULL,
+  `password` VARCHAR(255) DEFAULT NULL,
+  `city` VARCHAR(255) DEFAULT NULL,
+  `phone` VARCHAR(50) DEFAULT NULL,
+  `address` TEXT DEFAULT NULL,
+  `status` TINYINT DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -54,10 +69,7 @@ CREATE TABLE IF NOT EXISTS `am_gallery` (
 );
 
 -- 6. am_our_story
--- Note: strContent is the column inserted/updated by backend JS ({ strContent: ... }).
--- content is a generated column that mirrors strContent so SELECT queries returning `content` work seamlessly.
-DROP TABLE IF EXISTS `am_our_story`;
-CREATE TABLE `am_our_story` (
+CREATE TABLE IF NOT EXISTS `am_our_story` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `subdomain` VARCHAR(255) NOT NULL,
   `strContent` TEXT NOT NULL,
