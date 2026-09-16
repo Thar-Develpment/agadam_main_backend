@@ -2,7 +2,7 @@ const mysql = require("mysql2");
 const config = require('../config/config')
 
 const db = mysql.createPool({
-  host: "srv786.hstgr.io",
+  host: "localhost",
   user: "u823453650_aadagam_user",
   password: "hVSIeFgniyOmMhyrziqxO>vqKrXY0",
   database: "u823453650_aadagam",
