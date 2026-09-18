@@ -23,9 +23,6 @@ exports.getBasicAssets = async (req, res) => {
     let getQuery = `SELECT * FROM am_basic_assets WHERE status = 1`;
 
     query(getQuery, (err, data) => {
-        console.log("data: ", data);
-        console.log("err: ", err);
-        return res.json({ err: err, data: data })
         if (err) {
             return res.json({ status: 0, message: "Something went wrong" });
         } else if (data?.length == 0) {
