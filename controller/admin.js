@@ -658,6 +658,7 @@ exports.updateAskedQuestion = async (req, res) => {
 };
 
 exports.addOurStory = async (req, res) => {
+
     let reqData = req.body;
 
     const { subdomain } = req.user;
@@ -684,7 +685,7 @@ exports.addOurStory = async (req, res) => {
 
     let payload = {
         subdomain,
-        strContent,
+        content: strContent,
     };
 
     query(insertQuery, payload, (err, data) => {
@@ -782,6 +783,7 @@ exports.getSingleOurStory = async (req, res) => {
 };
 
 exports.updateOurStory = async (req, res) => {
+
     let reqData = req.body;
 
     const { subdomain } = req.user;
@@ -808,7 +810,7 @@ exports.updateOurStory = async (req, res) => {
     const strContent = JSON.stringify(content);
 
     let payload = {
-        strContent,
+        content: strContent,
     };
 
     query(insertQuery, [payload, id, subdomain], (err, data) => {

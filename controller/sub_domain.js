@@ -64,22 +64,20 @@ exports.getVideos = (req, res) => {
 
     query(sql, [subdomain], (err, results) => {
       if (err) {
-        console.error("Database error:", err);
 
         return res.status(500).json({
           status: 0,
-          message: "Database error",
+          message: "Something went wrong",
         });
       } else if (results.length == 0) {
         return res.status(200).json({
           status: 0,
-          message: "Database error",
+          message: "No data found",
         });
       }
 
       return res.status(200).json({
         status: 1,
-        message: "Videos fetched successfully",
         data: results,
       });
     });
