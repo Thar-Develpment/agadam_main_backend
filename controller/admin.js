@@ -337,7 +337,7 @@ exports.updateGallery = async (req, res) => {
     const v = new Validator(reqData, {
         id: "required|numeric",
         category_id: "required|numeric",
-        image_url: "required|string|maxLength:30",
+        image_url: "required|string|maxLength:100",
         status: "required|in:0,1",
     });
 
@@ -499,7 +499,7 @@ exports.updateVideo = async (req, res) => {
 
     const v = new Validator(reqData, {
         id: "required|numeric",
-        video_url: "required|string|maxLength:30",
+        video_url: "required|string|maxLength:100",
         status: "required|in:0,1",
     });
 
