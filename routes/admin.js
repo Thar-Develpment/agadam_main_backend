@@ -54,6 +54,12 @@ router.post('/get_all_our_story', authenticateToken, admin.getAllOurStory)
 router.post('/get_single_our_story', authenticateToken, admin.getSingleOurStory)
 router.post('/update_our_story', authenticateToken, admin.updateOurStory)
 
+
+router.post('/add_hero_slide', authenticateToken, admin.addHeroSlide)
+router.post('/get_all_hero_slide', authenticateToken, admin.getAllHeroSlide)
+router.post('/get_single_hero_slide', authenticateToken, admin.getSingleHeroSlide)
+router.post('/update_hero_slide', authenticateToken, admin.updateHeroSlide)
+
 router.get('/dash_board', authenticateToken, admin.adminDashboard)
 router.post('/price_update', authenticateToken, admin.priceUpdateApi)
 
