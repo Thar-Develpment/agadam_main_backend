@@ -1210,7 +1210,9 @@ exports.updateSiteInfo = async (req, res) => {
                     youtube: "",
                     telegram: "",
                 }
-            } else {
+            } 
+            
+            if(reqData?.facebook || reqData?.whatsapp || reqData?.instagram || reqData?.twitter || reqData?.youtube || reqData?.telegram){
                 reqData.facebook ? social_urls.facebook = reqData.facebook : social_urls.facebook
                 reqData.whatsapp ? social_urls.whatsapp = reqData.whatsapp : social_urls.whatsapp
                 reqData.instagram ? social_urls.instagram = reqData.instagram : social_urls.instagram
