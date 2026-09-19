@@ -663,7 +663,7 @@ exports.addOurStory = async (req, res) => {
 
     const { subdomain } = req.user;
 
-    const { content } = reqData;
+    const { content, image } = reqData;
 
     const v = new Validator(reqData, {
         content: "required|string",
@@ -686,6 +686,7 @@ exports.addOurStory = async (req, res) => {
     let payload = {
         subdomain,
         content: strContent,
+        image
     };
 
     query(insertQuery, payload, (err, data) => {
@@ -702,6 +703,7 @@ exports.addOurStory = async (req, res) => {
 };
 
 exports.getAllOurStory = async (req, res) => {
+
     let reqData = req.body;
 
     const { subdomain } = req.user;
@@ -748,6 +750,7 @@ exports.getAllOurStory = async (req, res) => {
 };
 
 exports.getSingleOurStory = async (req, res) => {
+
     let reqData = req.body;
 
     const { subdomain } = req.user;
@@ -788,7 +791,7 @@ exports.updateOurStory = async (req, res) => {
 
     const { subdomain } = req.user;
 
-    const { id, content } = reqData;
+    const { id, content, image } = reqData;
 
     const v = new Validator(reqData, {
         id: "required|numeric",
@@ -811,6 +814,7 @@ exports.updateOurStory = async (req, res) => {
 
     let payload = {
         content: strContent,
+        image
     };
 
     query(insertQuery, [payload, id, subdomain], (err, data) => {
@@ -1014,25 +1018,58 @@ exports.updateSiteInfo = async (req, res) => {
         });
     }
 
-    let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+    let getQuery = `SELECT social_urls FROM am_register WHERE subdomain = ?`
 
-    let payload = {
-        logo,
-        city,
-        address,
-        phone,
-        contact_us,
-        whatsapp_no
-    };
-
-    query(updateQuery, [payload, subdomain], (err, data) => {
-        if (err) {
-            const errMsg = "Failed to update site info";
-            return res.json({ status: 0, message: errMsg });
+    query(getQuery, [subdomain], (getErr, getSuc) => {
+        if (getErr) {
+            return res.json({ status: 0, message: "Something went wrong" });
         } else {
-            return res.json({ status: 1, message: "Site info updated successfully" });
+
+            let social_urls = getSuc[0]?.social_urls
+
+            if (!social_urls) {
+                social_urls = {
+                    facebook: "",
+                    whatsapp: "",
+                    instagram: "",
+                    twitter: "",
+                    youtube: "",
+                    telegram: "",
+                }
+            } else {
+                reqData.facebook ? social_urls.facebook = reqData.facebook : social_urls.facebook
+                reqData.whatsapp ? social_urls.whatsapp = reqData.whatsapp : social_urls.whatsapp
+                reqData.instagram ? social_urls.instagram = reqData.instagram : social_urls.instagram
+                reqData.twitter ? social_urls.twitter = reqData.twitter : social_urls.twitter
+                reqData.youtube ? social_urls.youtube = reqData.youtube : social_urls.youtube
+                reqData.telegram ? social_urls.telegram = reqData.telegram : social_urls.telegram
+            }
+
+            let socialUrlsStr = JSON.stringify(social_urls)
+
+            let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+
+            let payload = {
+                logo,
+                city,
+                address,
+                phone,
+                contact_us,
+                whatsapp_no,
+                social_urls: socialUrlsStr
+            };
+
+            query(updateQuery, [payload, subdomain], (err, data) => {
+                if (err) {
+                    const errMsg = "Failed to update site info";
+                    return res.json({ status: 0, message: errMsg });
+                } else {
+                    return res.json({ status: 1, message: "Site info updated successfully" });
+                }
+            });
         }
-    });
+    })
+
 };
 
 
