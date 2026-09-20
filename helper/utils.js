@@ -2,7 +2,7 @@ const query = require("../model/db")
 
 exports.checkPayment = (req, res, next) => {
 
-    const { subdomain } = req?.user;
+    let subdomain = req?.user?.subdomain;
 
     let subDomain;
 
@@ -25,9 +25,9 @@ exports.checkPayment = (req, res, next) => {
 
             if (!singleData?.payment_at) {
 
-                const createdAt = singleData.created_at
+                const createdAt = singleData?.created_at?.toString()
 
-                const createdDate = new Date(createdAt.replace(" ", "T"));
+                const createdDate = new Date(createdAt?.replace(" ", "T"));
 
                 const now = new Date();
 
