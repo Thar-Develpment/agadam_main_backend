@@ -76,4 +76,11 @@ router.post(
 router.post('/update_site_info', authenticateToken, admin.updateSiteInfo)
 router.post('/activate_subdomain', authenticateToken, admin.activateSubdomain)
 
+router.post("/forgot-password", admin.forgotPassword);
+router.post("/reset-password", admin.resetPassword);
+router.post("/resend-otp", admin.resendOtp);
+
+
+
+
 module.exports = router;

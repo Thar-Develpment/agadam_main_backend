@@ -2,1311 +2,1638 @@ const { Validator } = require("node-input-validator");
 const query = require("../model/db");
 const { generateJwtToken } = require("../helper/jwt");
 
-
 exports.login = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { email, password } = reqData;
 
-    const { email, password } = reqData;
+  const v = new Validator(reqData, {
+    email: "required|email",
+    password: "required|string|maxLength:100",
+  });
 
-    const v = new Validator(reqData, {
-        email: "required|email",
-        password: "required|string|maxLength:100"
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let isSuper = 0;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
+  console.log("reqData?.type: ", reqData?.type);
+  if (reqData?.type === "super") {
+    isSuper = 1;
+  }
+
+  let getQuery = `SELECT id,subdomain,email,password FROM am_register WHERE email = ? AND isSuper = ? LIMIT 1`;
+
+  query(getQuery, [email, isSuper], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "Invalid email address" });
+    } else {
+      let userData = data[0];
+
+      if (password === userData.password) {
+        let authTkn = generateJwtToken(userData);
+
+        return res.json({
+          status: 1,
+          authTkn: authTkn,
+          message: "Login success",
         });
+      } else {
+        return res.json({ status: 0, message: "Invalid password" });
+      }
     }
-
-    let isSuper = 0
-
-    console.log("reqData?.type: ", reqData?.type);
-    if (reqData?.type === 'super') {
-        isSuper = 1
-    }
-
-    let getQuery = `SELECT id,subdomain,email,password FROM am_register WHERE email = ? AND isSuper = ? LIMIT 1`;
-
-    query(getQuery, [email, isSuper], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "Invalid email address" });
-        } else {
-
-            let userData = data[0]
-
-            if (password === userData.password) {
-
-                let authTkn = generateJwtToken(userData)
-
-                return res.json({ status: 1, authTkn: authTkn, message: "Login success" });
-            } else {
-                return res.json({ status: 0, message: "Invalid password" });
-            }
-        }
-    });
+  });
 };
 
-
 exports.addCategory = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { category_name } = reqData;
+  const { category_name } = reqData;
 
-    const v = new Validator(reqData, {
-        category_name: "required|string|maxLength:30",
+  const v = new Validator(reqData, {
+    category_name: "required|string|maxLength:30",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `INSERT INTO am_gallery_categories SET ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    subdomain,
+    category_name,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Category ${category_name} already exists`
+        : "Failed to add category";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Category added successfully" });
     }
-
-    let insertQuery = `INSERT INTO am_gallery_categories SET ?`;
-
-    let payload = {
-        subdomain,
-        category_name,
-    };
-
-    query(insertQuery, payload, (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Category ${category_name} already exists`
-                : "Failed to add category";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Category added successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllCategory = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { pageNo, pageSize } = reqData;
+  const { pageNo, pageSize } = reqData;
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  const offset = pageNo * pageSize;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_gallery_categories WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_gallery_categories WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
     }
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_gallery_categories WHERE subdomain = ?;`;
-
-    const getQuery = `SELECT * FROM am_gallery_categories WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
-        }
-    });
+  });
 };
 
 exports.getSingleCategory = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id } = reqData;
+  const { id } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_gallery_categories WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_gallery_categories WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateCategory = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id, category_name, status } = reqData;
+  const { id, category_name, status } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
-        category_name: "required|string|maxLength:30",
-        status: "required|in:0,1",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    category_name: "required|string|maxLength:30",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `UPDATE am_gallery_categories SET ? WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    category_name,
+    status,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Category ${category_name} already exists`
+        : "Failed to update category";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Category updated successfully" });
     }
-
-    let insertQuery = `UPDATE am_gallery_categories SET ? WHERE id = ? AND subdomain = ?`;
-
-    let payload = {
-        category_name,
-        status,
-    };
-
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Category ${category_name} already exists`
-                : "Failed to update category";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Category updated successfully" });
-        }
-    });
+  });
 };
 
 exports.addGallery = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { category_id, image_url } = reqData;
+  const { category_id, image_url } = reqData;
 
-    const v = new Validator(reqData, {
-        category_id: "required|numeric",
-        image_url: "required|string|maxLength:100",
+  const v = new Validator(reqData, {
+    category_id: "required|numeric",
+    image_url: "required|string|maxLength:100",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `INSERT INTO am_gallery SET ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    subdomain,
+    category_id,
+    image_url,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Gallery already exists`
+        : "Failed to add Gallery";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Gallery added successfully" });
     }
-
-    let insertQuery = `INSERT INTO am_gallery SET ?`;
-
-    let payload = {
-        subdomain,
-        category_id,
-        image_url,
-    };
-
-    query(insertQuery, payload, (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Gallery already exists`
-                : "Failed to add Gallery";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Gallery added successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllGallery = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { pageNo, pageSize } = reqData;
+  const { pageNo, pageSize } = reqData;
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  const offset = pageNo * pageSize;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_gallery WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_gallery WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
     }
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_gallery WHERE subdomain = ?;`;
-
-    const getQuery = `SELECT * FROM am_gallery WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
-        }
-    });
+  });
 };
 
 exports.getSingleGallery = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id } = reqData;
+  const { id } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_gallery WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_gallery WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateGallery = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id, category_id, image_url, status } = reqData;
+  const { id, category_id, image_url, status } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
-        category_id: "required|numeric",
-        image_url: "required|string|maxLength:250",
-        status: "required|in:0,1",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    category_id: "required|numeric",
+    image_url: "required|string|maxLength:250",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `UPDATE am_gallery SET ? WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    category_id,
+    image_url,
+    category_name,
+    status,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Gallery already exists`
+        : "Failed to update Gallery";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Gallery updated successfully" });
     }
-
-    let insertQuery = `UPDATE am_gallery SET ? WHERE id = ? AND subdomain = ?`;
-
-    let payload = {
-        category_id,
-        image_url,
-        category_name,
-        status,
-    };
-
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Gallery already exists`
-                : "Failed to update Gallery";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Gallery updated successfully" });
-        }
-    });
+  });
 };
 
 exports.addVideo = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { video_url } = reqData;
+  const { video_url } = reqData;
 
-    const v = new Validator(reqData, {
-        video_url: "required|string|maxLength:100",
+  const v = new Validator(reqData, {
+    video_url: "required|string|maxLength:100",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `INSERT INTO am_videos SET ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    subdomain,
+    video_url,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Video already exists`
+        : "Failed to add Video";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Video added successfully" });
     }
-
-    let insertQuery = `INSERT INTO am_videos SET ?`;
-
-    let payload = {
-        subdomain,
-        video_url,
-    };
-
-    query(insertQuery, payload, (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Video already exists`
-                : "Failed to add Video";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Video added successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllVideo = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { pageNo, pageSize } = reqData;
+  const { pageNo, pageSize } = reqData;
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  const offset = pageNo * pageSize;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_videos WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_videos WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
     }
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_videos WHERE subdomain = ?;`;
-
-    const getQuery = `SELECT * FROM am_videos WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
-        }
-    });
+  });
 };
 
 exports.getSingleVideo = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id } = reqData;
+  const { id } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_videos WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_videos WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateVideo = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id, video_url, status } = reqData;
+  const { id, video_url, status } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
-        video_url: "required|string|maxLength:250",
-        status: "required|in:0,1",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    video_url: "required|string|maxLength:250",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `UPDATE am_videos SET ? WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    video_url,
+    status,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Video already exists`
+        : "Failed to update Video";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Video updated successfully" });
     }
-
-    let insertQuery = `UPDATE am_videos SET ? WHERE id = ? AND subdomain = ?`;
-
-    let payload = {
-        video_url,
-        status,
-    };
-
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Video already exists`
-                : "Failed to update Video";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Video updated successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllAskedQuestions = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { pageNo, pageSize } = reqData;
+  const { pageNo, pageSize } = reqData;
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let where = "WHERE subdomain = ?";
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const values = [subdomain];
+
+  if (reqData?.status) {
+    where += " AND status = ?";
+    values.push(reqData.status);
+  }
+
+  const finalValues = [...values, ...values];
+
+  const offset = pageNo * pageSize;
+
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_asked_questions ${where};`;
+
+  const getQuery = `SELECT * FROM am_asked_questions ${where} ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [...finalValues, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
     }
-
-    let where = "WHERE subdomain = ?";
-
-    const values = [subdomain];
-
-    if (reqData?.status) {
-        where += " AND status = ?";
-        values.push(reqData.status);
-    }
-
-    const finalValues = [...values, ...values];
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_asked_questions ${where};`;
-
-    const getQuery = `SELECT * FROM am_asked_questions ${where} ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [...finalValues, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
-        }
-    });
+  });
 };
 
 exports.getSingleAskedQuestion = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id } = reqData;
+  const { id } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_asked_questions WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_asked_questions WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateAskedQuestion = async (req, res) => {
-    let reqData = req.body;
+  let reqData = req.body;
 
-    const { subdomain } = req.user;
+  const { subdomain } = req.user;
 
-    const { id, status } = reqData;
+  const { id, status } = reqData;
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
-        status: "required|in:0,1",
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `UPDATE am_asked_questions SET ? WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    status,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Failed to update status" });
+    } else {
+      return res.json({ status: 1, message: "Status updated successfully" });
     }
-
-    let insertQuery = `UPDATE am_asked_questions SET ? WHERE id = ? AND subdomain = ?`;
-
-    let payload = {
-        status,
-    };
-
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Failed to update status" });
-        } else {
-            return res.json({ status: 1, message: "Status updated successfully" });
-        }
-    });
+  });
 };
 
 exports.addOurStory = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { content, image } = reqData;
 
-    const { content, image } = reqData;
+  const v = new Validator(reqData, {
+    content: "required|string",
+  });
 
-    const v = new Validator(reqData, {
-        content: "required|string",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `INSERT INTO am_our_story SET ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let strContent = JSON.stringify(content);
+
+  let payload = {
+    subdomain,
+    content: strContent,
+    image,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Story already exists`
+        : "Failed to add Story";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Story added successfully" });
     }
-
-    let insertQuery = `INSERT INTO am_our_story SET ?`;
-
-    let strContent = JSON.stringify(content);
-
-    let payload = {
-        subdomain,
-        content: strContent,
-        image
-    };
-
-    query(insertQuery, payload, (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Story already exists`
-                : "Failed to add Story";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Story added successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllOurStory = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { pageNo, pageSize } = reqData;
 
-    const { pageNo, pageSize } = reqData;
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  const offset = pageNo * pageSize;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_our_story WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_our_story WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      const listData = data[1].map((e) => {
+        e.content = JSON.parse(e.content);
+        return e;
+      });
+      return res.json({ status: 1, totalRecords: totalCount, data: listData });
     }
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_our_story WHERE subdomain = ?;`;
-
-    const getQuery = `SELECT * FROM am_our_story WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            const listData = data[1].map((e) => {
-                e.content = JSON.parse(e.content);
-                return e;
-            });
-            return res.json({ status: 1, totalRecords: totalCount, data: listData });
-        }
-    });
+  });
 };
 
 exports.getSingleOurStory = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { id } = reqData;
 
-    const { id } = reqData;
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_our_story WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      data[0].content = JSON.parse(data[0].content);
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_our_story WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            data[0].content = JSON.parse(data[0].content);
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateOurStory = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { id, content, image } = reqData;
 
-    const { id, content, image } = reqData;
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    content: "required|string",
+  });
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
-        content: "required|string",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `UPDATE am_our_story SET ? WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const strContent = JSON.stringify(content);
+
+  let payload = {
+    content: strContent,
+    image,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Failed to update story" });
+    } else {
+      return res.json({ status: 1, message: "Story updated successfully" });
     }
-
-    let insertQuery = `UPDATE am_our_story SET ? WHERE id = ? AND subdomain = ?`;
-
-    const strContent = JSON.stringify(content);
-
-    let payload = {
-        content: strContent,
-        image
-    };
-
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Failed to update story" });
-        } else {
-            return res.json({ status: 1, message: "Story updated successfully" });
-        }
-    });
+  });
 };
 
-
-
 exports.addHeroSlide = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { title, description, image } = reqData;
 
-    const { title, description, image } = reqData;
+  const v = new Validator(reqData, {
+    title: "required|string|maxLength:255",
+    description: "required|string|maxLength:1000",
+    image: "required|string|maxLength:255",
+  });
 
-    const v = new Validator(reqData, {
-        title: "required|string|maxLength:255",
-        description: "required|string|maxLength:1000",
-        image: "required|string|maxLength:255",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let insertQuery = `INSERT INTO am_hero_slide SET ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  let payload = {
+    subdomain,
+    title,
+    description,
+    image,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Hero slide already exists`
+        : "Failed to add Hero slide";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Hero slide added successfully" });
     }
-
-    let insertQuery = `INSERT INTO am_hero_slide SET ?`;
-
-    let payload = {
-        subdomain,
-        title,
-        description,
-        image
-    };
-
-    query(insertQuery, payload, (err, data) => {
-        if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Hero slide already exists`
-                : "Failed to add Hero slide";
-            return res.json({ status: 0, message: errMsg });
-        } else {
-            return res.json({ status: 1, message: "Hero slide added successfully" });
-        }
-    });
+  });
 };
 
 exports.getAllHeroSlide = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { pageNo, pageSize } = reqData;
 
-    const { pageNo, pageSize } = reqData;
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
 
-    const v = new Validator(reqData, {
-        pageNo: "required|numeric",
-        pageSize: "required|numeric",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  const offset = pageNo * pageSize;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_hero_slide WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_hero_slide WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
     }
-
-    const offset = pageNo * pageSize;
-
-    const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_hero_slide WHERE subdomain = ?;`;
-
-    const getQuery = `SELECT * FROM am_hero_slide WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
-
-    const finalQuery = countQuery + getQuery;
-
-    query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data[0][0]?.totalRecords == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            const totalCount = data[0][0]?.totalRecords || 0;
-            return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
-        }
-    });
+  });
 };
 
 exports.getSingleHeroSlide = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { id } = reqData;
 
-    const { id } = reqData;
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
 
-    const v = new Validator(reqData, {
-        id: "required|numeric",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT * FROM am_hero_slide WHERE id = ? AND subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(getQuery, [id, subdomain], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
     }
-
-    let getQuery = `SELECT * FROM am_hero_slide WHERE id = ? AND subdomain = ?`;
-
-    query(getQuery, [id, subdomain], (err, data) => {
-        if (err) {
-            return res.json({ status: 0, message: "Something went wrong" });
-        } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "No data found" });
-        } else {
-            return res.json({ status: 1, data: data[0] });
-        }
-    });
+  });
 };
 
 exports.updateHeroSlide = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
+
+  const { id, title, description, image, status } = reqData;
+
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    title: "required|string|maxLength:255",
+    description: "required|string|maxLength:1000",
+    image: "required|string|maxLength:255",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  let insertQuery = `UPDATE am_hero_slide SET ? WHERE id = ? AND subdomain = ?`;
+
+  let payload = {
+    title,
+    description,
+    image,
+    status,
+  };
+
+  query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Hero slide already exists`
+        : "Failed to update Hero slide";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({
+        status: 1,
+        message: "Hero slide updated successfully",
+      });
+    }
+  });
+};
+
+exports.priceUpdateApi = async (req, res) => {
+  try {
+    const reqData = req.body;
 
     const { subdomain } = req.user;
 
-    const { id, title, description, image, status } = reqData;
-
     const v = new Validator(reqData, {
-        id: "required|numeric",
-        title: "required|string|maxLength:255",
-        description: "required|string|maxLength:1000",
-        image: "required|string|maxLength:255",
-        status: "required|in:0,1",
+      material: "required",
+      purity: "required",
+      price: "required",
     });
 
     const matched = await v.check();
 
     if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+      return res.status(422).json({
+        success: false,
+        message: "Validation failed",
+        errors: v.errors,
+      });
     }
 
-    let insertQuery = `UPDATE am_hero_slide SET ? WHERE id = ? AND subdomain = ?`;
+    let purity = ["22k", "18k", "24k"];
+    let material = ["gold", "silver"];
 
-    let payload = {
-        title,
-        description,
-        image,
-        status,
-    };
+    if (!purity.includes(reqData.purity)) {
+      return res.status(422).json({
+        success: false,
+        message: "wrong purity",
+        errors: v.errors,
+      });
+    }
 
-    query(insertQuery, [payload, id, subdomain], (err, data) => {
+    if (!material.includes(reqData.material)) {
+      return res.status(422).json({
+        success: false,
+        message: "wrong material",
+        errors: v.errors,
+      });
+    }
+
+    let updateQuery = `UPDATE am_price_list SET ? WHERE purity = ? AND material = ? AND subdomain = ?`;
+
+    const values = { price: reqData.price };
+
+    query(
+      updateQuery,
+      [values, reqData.purity, reqData.material, subdomain],
+      (err, updateResult) => {
+        console.log("updateResult: ", updateResult);
         if (err) {
-            const isDuplicate = err.code == "ER_DUP_ENTRY";
-            const errMsg = isDuplicate
-                ? `Hero slide already exists`
-                : "Failed to update Hero slide";
-            return res.json({ status: 0, message: errMsg });
+          return res.json({ status: 0, message: "Failed to update price" });
+        } else if (updateResult?.affectedRows > 0) {
+          return res.json({ status: 1, message: "Price updated successfully" });
         } else {
-            return res.json({ status: 1, message: "Hero slide updated successfully" });
-        }
-    });
-};
+          let insertQuery = `INSERT INTO am_price_list SET ?`;
 
+          let insertObj = {
+            subdomain: subdomain,
+            material: reqData.material,
+            purity: reqData.purity,
+            price: reqData.price,
+          };
 
-exports.priceUpdateApi = async (req, res) => {
-    try {
-
-        const reqData = req.body;
-
-        const { subdomain } = req.user;
-
-        const v = new Validator(reqData, {
-            material: "required",
-            purity: "required",
-            price: "required",
-        });
-
-        const matched = await v.check();
-
-        if (!matched) {
-            return res.status(422).json({
-                success: false,
-                message: "Validation failed",
-                errors: v.errors,
-            });
-        }
-
-        let purity = ["22k", "18k", "24k"];
-        let material = ["gold", "silver"];
-
-        if (!purity.includes(reqData.purity)) {
-            return res.status(422).json({
-                success: false,
-                message: "wrong purity",
-                errors: v.errors,
-            });
-        }
-
-        if (!material.includes(reqData.material)) {
-            return res.status(422).json({
-                success: false,
-                message: "wrong material",
-                errors: v.errors,
-            });
-        }
-
-        let updateQuery = `UPDATE am_price_list SET ? WHERE purity = ? AND material = ? AND subdomain = ?`;
-
-        const values = { price: reqData.price }
-
-        query(updateQuery, [values, reqData.purity, reqData.material, subdomain], (err, updateResult) => {
-            console.log("updateResult: ", updateResult);
-            if (err) {
-                return res.json({ status: 0, message: "Failed to update price" });
-            } else if (updateResult?.affectedRows > 0) {
-                return res.json({ status: 1, message: "Price updated successfully" });
+          query(insertQuery, insertObj, (insErr, insSuc) => {
+            if (insErr && !insSuc) {
+              return res.json({ status: 0, message: "Failed to update price" });
             } else {
-
-                let insertQuery = `INSERT INTO am_price_list SET ?`
-
-                let insertObj = {
-                    subdomain: subdomain,
-                    material: reqData.material,
-                    purity: reqData.purity,
-                    price: reqData.price
-                }
-
-                query(insertQuery, insertObj, (insErr, insSuc) => {
-                    if (insErr && !insSuc) {
-                        return res.json({ status: 0, message: "Failed to update price" });
-                    } else {
-                        return res.json({ status: 1, message: "Price updated successfully" });
-                    }
-                })
+              return res.json({
+                status: 1,
+                message: "Price updated successfully",
+              });
             }
-        },
-        );
-    } catch (error) { }
+          });
+        }
+      },
+    );
+  } catch (error) {}
 };
-
 
 exports.adminDashboard = async (req, res) => {
-    try {
-        query(
-            `SELECT COUNT(id) as register_count FROM am_register;SELECT material,purity,price FROM am_price_list`,
-            async (error, tenant) => {
-                if (error) {
-                    console.error("Database error:", error);
+  try {
+    query(
+      `SELECT COUNT(id) as register_count FROM am_register;SELECT material,purity,price FROM am_price_list`,
+      async (error, tenant) => {
+        if (error) {
+          console.error("Database error:", error);
 
-                    return res.status(500).json({
-                        status: 0,
-                        success: 0,
-                        message: "Failed to check shop!",
-                    });
-                } else {
-
-                    let priceData = tenant[1]
-                    return res.status(200).json({
-                        status: 1,
-                        success: 1,
-                        register_count: tenant[0][0].register_count,
-                        priceData: priceData,
-                        message: "success",
-                    });
-                }
-            },
-        );
-    } catch (error) {
-        res.json({ status: 0, message: "Something went wrong!" });
-    }
+          return res.status(500).json({
+            status: 0,
+            success: 0,
+            message: "Failed to check shop!",
+          });
+        } else {
+          let priceData = tenant[1];
+          return res.status(200).json({
+            status: 1,
+            success: 1,
+            register_count: tenant[0][0].register_count,
+            priceData: priceData,
+            message: "success",
+          });
+        }
+      },
+    );
+  } catch (error) {
+    res.json({ status: 0, message: "Something went wrong!" });
+  }
 };
 
 exports.getAllTenants = async (req, res) => {
-    try {
-        const sql = `SELECT id, shop_name, owner_name, email, city, subdomain, IFNULL(status, 1) as status, created_at FROM am_register ORDER BY id DESC`;
-        query(sql, [], (err, results) => {
-            if (err) {
-                console.error("Database error in getAllTenants:", err);
-                if (err.code === "ER_BAD_FIELD_ERROR" || (err.message && err.message.includes("status"))) {
-                    query(`ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`, [], (alterErr) => {
-                        query(sql, [], (retryErr, retryResults) => {
-                            if (retryErr) {
-                                return res.status(500).json({ status: 0, message: "Database error" });
-                            }
-                            return res.status(200).json({
-                                status: 1,
-                                totalRecords: retryResults.length,
-                                data: retryResults
-                            });
-                        });
-                    });
-                    return;
+  try {
+    const sql = `SELECT id, shop_name, owner_name, email, city, subdomain, IFNULL(status, 1) as status, created_at FROM am_register ORDER BY id DESC`;
+    query(sql, [], (err, results) => {
+      if (err) {
+        console.error("Database error in getAllTenants:", err);
+        if (
+          err.code === "ER_BAD_FIELD_ERROR" ||
+          (err.message && err.message.includes("status"))
+        ) {
+          query(
+            `ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`,
+            [],
+            (alterErr) => {
+              query(sql, [], (retryErr, retryResults) => {
+                if (retryErr) {
+                  return res
+                    .status(500)
+                    .json({ status: 0, message: "Database error" });
                 }
-                return res.status(500).json({ status: 0, message: "Database error: " + err.message });
-            }
-            return res.status(200).json({
-                status: 1,
-                totalRecords: results.length,
-                data: results
-            });
-        });
-    } catch (error) {
-        return res.status(500).json({ status: 0, message: "Internal server error" });
-    }
+                return res.status(200).json({
+                  status: 1,
+                  totalRecords: retryResults.length,
+                  data: retryResults,
+                });
+              });
+            },
+          );
+          return;
+        }
+        return res
+          .status(500)
+          .json({ status: 0, message: "Database error: " + err.message });
+      }
+      return res.status(200).json({
+        status: 1,
+        totalRecords: results.length,
+        data: results,
+      });
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ status: 0, message: "Internal server error" });
+  }
 };
 
 exports.toggleTenantStatus = async (req, res) => {
-    try {
-        const { id, status } = req.body;
-        if (id === undefined || status === undefined) {
-            return res.status(400).json({ status: 0, message: "ID and status are required" });
-        }
-
-        const newStatus = Number(status);
-        const tenantId = Number(id);
-
-        const updateSql = `UPDATE am_register SET status = ? WHERE id = ?`;
-
-        query(updateSql, [newStatus, tenantId], (err, results) => {
-            if (err) {
-                console.error("Database error in toggleTenantStatus:", err);
-                if (err.code === "ER_BAD_FIELD_ERROR" || (err.message && err.message.includes("status"))) {
-                    query(`ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`, [], (alterErr) => {
-                        query(updateSql, [newStatus, tenantId], (retryErr, retryResults) => {
-                            if (retryErr) {
-                                return res.status(500).json({ status: 0, message: "Failed to update tenant status in database" });
-                            }
-                            return res.status(200).json({
-                                status: 1,
-                                message: "Status updated successfully"
-                            });
-                        });
-                    });
-                    return;
-                }
-                return res.status(500).json({ status: 0, message: "Failed to update status: " + err.message });
-            }
-            return res.status(200).json({
-                status: 1,
-                message: "Status updated successfully"
-            });
-        });
-    } catch (error) {
-        return res.status(500).json({ status: 0, message: "Internal server error" });
+  try {
+    const { id, status } = req.body;
+    if (id === undefined || status === undefined) {
+      return res
+        .status(400)
+        .json({ status: 0, message: "ID and status are required" });
     }
-};
 
+    const newStatus = Number(status);
+    const tenantId = Number(id);
+
+    const updateSql = `UPDATE am_register SET status = ? WHERE id = ?`;
+
+    query(updateSql, [newStatus, tenantId], (err, results) => {
+      if (err) {
+        console.error("Database error in toggleTenantStatus:", err);
+        if (
+          err.code === "ER_BAD_FIELD_ERROR" ||
+          (err.message && err.message.includes("status"))
+        ) {
+          query(
+            `ALTER TABLE am_register ADD COLUMN status TINYINT DEFAULT 1`,
+            [],
+            (alterErr) => {
+              query(
+                updateSql,
+                [newStatus, tenantId],
+                (retryErr, retryResults) => {
+                  if (retryErr) {
+                    return res
+                      .status(500)
+                      .json({
+                        status: 0,
+                        message: "Failed to update tenant status in database",
+                      });
+                  }
+                  return res.status(200).json({
+                    status: 1,
+                    message: "Status updated successfully",
+                  });
+                },
+              );
+            },
+          );
+          return;
+        }
+        return res
+          .status(500)
+          .json({
+            status: 0,
+            message: "Failed to update status: " + err.message,
+          });
+      }
+      return res.status(200).json({
+        status: 1,
+        message: "Status updated successfully",
+      });
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ status: 0, message: "Internal server error" });
+  }
+};
 
 exports.updateSiteInfo = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { subdomain } = req.user;
 
-    const { subdomain } = req.user;
+  const { logo, city, address, phone, contact_us, whatsapp_no } = reqData;
 
-    const { logo, city, address, phone, contact_us, whatsapp_no } = reqData;
+  const v = new Validator(reqData, {
+    logo: "required|string|maxLength:250",
+    city: "required|string|maxLength:30",
+    address: "required|string|maxLength:1500",
+    phone: "required|string|maxLength:15",
+    contact_us: "required|string|maxLength:30",
+    whatsapp_no: "required|string|maxLength:15",
+  });
 
-    const v = new Validator(reqData, {
-        logo: "required|string|maxLength:250",
-        city: "required|string|maxLength:30",
-        address: "required|string|maxLength:1500",
-        phone: "required|string|maxLength:15",
-        contact_us: "required|string|maxLength:30",
-        whatsapp_no: "required|string|maxLength:15",
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let getQuery = `SELECT social_urls FROM am_register WHERE subdomain = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
-    }
+  query(getQuery, [subdomain], (getErr, getSuc) => {
+    if (getErr) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else {
+      let social_urls = getSuc[0]?.social_urls;
 
-    let getQuery = `SELECT social_urls FROM am_register WHERE subdomain = ?`
+      if (!social_urls) {
+        social_urls = {
+          facebook: "",
+          whatsapp: "",
+          instagram: "",
+          twitter: "",
+          youtube: "",
+          telegram: "",
+        };
+      }
 
-    query(getQuery, [subdomain], (getErr, getSuc) => {
-        if (getErr) {
-            return res.json({ status: 0, message: "Something went wrong" });
+      if (
+        reqData?.facebook ||
+        reqData?.whatsapp ||
+        reqData?.instagram ||
+        reqData?.twitter ||
+        reqData?.youtube ||
+        reqData?.telegram
+      ) {
+        reqData.facebook
+          ? (social_urls.facebook = reqData.facebook)
+          : social_urls.facebook;
+        reqData.whatsapp
+          ? (social_urls.whatsapp = reqData.whatsapp)
+          : social_urls.whatsapp;
+        reqData.instagram
+          ? (social_urls.instagram = reqData.instagram)
+          : social_urls.instagram;
+        reqData.twitter
+          ? (social_urls.twitter = reqData.twitter)
+          : social_urls.twitter;
+        reqData.youtube
+          ? (social_urls.youtube = reqData.youtube)
+          : social_urls.youtube;
+        reqData.telegram
+          ? (social_urls.telegram = reqData.telegram)
+          : social_urls.telegram;
+      }
+
+      let socialUrlsStr = JSON.stringify(social_urls);
+
+      let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
+
+      let payload = {
+        logo,
+        city,
+        address,
+        phone,
+        contact_us,
+        whatsapp_no,
+        social_urls: socialUrlsStr,
+      };
+
+      query(updateQuery, [payload, subdomain], (err, data) => {
+        if (err) {
+          const errMsg = "Failed to update site info";
+          return res.json({ status: 0, message: errMsg });
         } else {
-
-            let social_urls = getSuc[0]?.social_urls
-
-            if (!social_urls) {
-                social_urls = {
-                    facebook: "",
-                    whatsapp: "",
-                    instagram: "",
-                    twitter: "",
-                    youtube: "",
-                    telegram: "",
-                }
-            }
-
-            if (reqData?.facebook || reqData?.whatsapp || reqData?.instagram || reqData?.twitter || reqData?.youtube || reqData?.telegram) {
-                reqData.facebook ? social_urls.facebook = reqData.facebook : social_urls.facebook
-                reqData.whatsapp ? social_urls.whatsapp = reqData.whatsapp : social_urls.whatsapp
-                reqData.instagram ? social_urls.instagram = reqData.instagram : social_urls.instagram
-                reqData.twitter ? social_urls.twitter = reqData.twitter : social_urls.twitter
-                reqData.youtube ? social_urls.youtube = reqData.youtube : social_urls.youtube
-                reqData.telegram ? social_urls.telegram = reqData.telegram : social_urls.telegram
-            }
-
-            let socialUrlsStr = JSON.stringify(social_urls)
-
-            let updateQuery = `UPDATE am_register SET ? WHERE subdomain = ?`;
-
-            let payload = {
-                logo,
-                city,
-                address,
-                phone,
-                contact_us,
-                whatsapp_no,
-                social_urls: socialUrlsStr
-            };
-
-            query(updateQuery, [payload, subdomain], (err, data) => {
-                if (err) {
-                    const errMsg = "Failed to update site info";
-                    return res.json({ status: 0, message: errMsg });
-                } else {
-                    return res.json({ status: 1, message: "Site info updated successfully" });
-                }
-            });
+          return res.json({
+            status: 1,
+            message: "Site info updated successfully",
+          });
         }
-    })
-
+      });
+    }
+  });
 };
-
-
 
 // when payment done
 
 exports.activateSubdomain = async (req, res) => {
+  let reqData = req.body;
 
-    let reqData = req.body;
+  const { id } = reqData;
 
-    const { id } = reqData;
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
 
-    const v = new Validator(reqData, {
-        id: "required|numeric"
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
     });
+  }
 
-    const matched = await v.check();
+  let updateQuery = `UPDATE am_register SET status = ?,payment_at = NOW() WHERE id = ?`;
 
-    if (!matched) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation failed",
-            errors: v.errors,
-        });
+  query(updateQuery, [1, id], (err, data) => {
+    if (err) {
+      const errMsg = "Failed to activate site";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Site activated successfully" });
+    }
+  });
+};
+
+const transporter = require("../config/node_mailer");
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
     }
 
-    let updateQuery = `UPDATE am_register SET status = ?,payment_at = NOW() WHERE id = ?`;
-
-    query(updateQuery, [1, id], (err, data) => {
+    // Check email in DB
+    query(
+      "SELECT id, email FROM am_register WHERE email = ? LIMIT 1",
+      [email],
+      (err, data) => {
+        console.log("err: ", err);
         if (err) {
-            const errMsg = "Failed to activate site";
-            return res.json({ status: 0, message: errMsg });
+          const errMsg = "Somthing-went wrong-ft!";
+          return res.json({ status: 0, message: errMsg });
+        } else if (data.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "ft-Email not found",
+          });
         } else {
-            return res.json({ status: 1, message: "Site activated successfully" });
+          // Generate 6 digit OTP
+          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+          // OTP expires after 5 minutes
+          const expiry = new Date(Date.now() + 5 * 60 * 1000);
+
+          // Save OTP
+          query(
+            `UPDATE am_register 
+             SET otp = ?, reset_otp_expires_at = ?
+             WHERE email = ?`,
+            [otp, expiry, email],
+            async (err, updtData) => {
+              if (err) {
+                const errMsg = "Failed to  forget password!";
+                return res.json({ status: 0, message: errMsg });
+              } else {
+                // Send OTP
+                await transporter.sendMail({
+                  from: "aadagam7@gmail.com",
+                  to: email,
+                  subject: "Password Reset OTP",
+                  html: `
+                <h2>Password Reset</h2>
+                <p>Your OTP is:</p>
+
+                <h1>${otp}</h1>
+
+                <p>This OTP will expire in 5 minutes.</p>
+            `,
+                });
+
+                return res.status(200).json({
+                  success: true,
+                  message: "OTP sent successfully",
+                });
+              }
+            },
+          );
         }
+      },
+    );
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
     });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    // Get user
+    query(
+      `SELECT id, otp, reset_otp_expires_at
+             FROM am_register
+             WHERE email = ?
+             LIMIT 1`,
+      [email],
+      (err, data) => {
+        if (err) {
+          return res.status(404).json({
+            success: false,
+            message: "Somethig-went wrong get-mail",
+          });
+        } else if (data.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "rs - email not found!",
+          });
+        } else {
+          const user = data[0];
+
+          // Verify OTP again
+          if (+user.otp !== +otp) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid OTP",
+            });
+          }
+
+          // Check OTP expiry
+          if (
+            !user.reset_otp_expires_at ||
+            new Date(user.reset_otp_expires_at) < new Date()
+          ) {
+            return res.status(400).json({
+              success: false,
+              message: "OTP expired",
+            });
+          }
+
+          // Hash new password
+          const hashedPassword = newPassword;
+
+          // Update password and remove OTP
+          query(
+            `UPDATE am_register
+     SET password = ?,
+         otp = NULL,
+         reset_otp_expires_at = NULL,
+         otpCount = 0
+     WHERE id = ?`,
+            [hashedPassword, user.id],
+            async (err, uptDAta) => {
+              console.log("err: ", err);
+              if (err) {
+                return res.json({
+                  success: false,
+                  message: "reset-password update Failure!",
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: "Password reset successfully",
+                });
+              }
+            },
+          );
+        }
+      },
+    );
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
+exports.resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Get user
+    query(
+      `SELECT id, email, otpCount
+             FROM am_register
+             WHERE email = ?
+             LIMIT 1`,
+      [email],
+      async (err, data) => {
+        if (err) {
+          return res.status(404).json({
+            success: false,
+            message: "rsp - email not found!",
+          });
+        } else if (data.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Email not found",
+          });
+        } else {
+          const user = data[0];
+
+          // Maximum 3 resend attempts
+          if (user.otpCount >= 3) {
+            return res.status(429).json({
+              success: false,
+              message:
+                "Maximum OTP resend limit reached. Please try again later.",
+            });
+          }
+
+          // Generate secure 6 digit OTP
+          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+          // OTP expires in 5 minutes
+          const expiry = new Date(Date.now() + 5 * 60 * 1000);
+
+          // Increase resend count
+          const newCount = +user.otpCount + 1;
+
+          // Update OTP
+          query(
+            `UPDATE am_register
+             SET otp = ?,
+                 reset_otp_expires_at = ?,
+                 otpCount = ?
+             WHERE id = ?`,
+            [otp, expiry, newCount, user.id],
+            async (err, updatedData) => {
+              if (err) {
+                return res.json({
+                  success: false,
+                  message: "Rt-up Somthing-went wrong!.",
+                });
+              } else {
+                // Send email
+                await transporter.sendMail({
+                  from: "aadagam7@gmail.com",
+                  to: email,
+                  subject: "Your New OTP",
+                  html: `
+                <h2>Password Reset OTP</h2>
+
+                <p>Your new OTP is:</p>
+
+                <h1>${otp}</h1>
+
+                <p>This OTP expires in 5 minutes.</p>
+
+                <p>Resend attempts used: ${newCount}/3</p>
+            `,
+                });
+
+                return res.status(200).json({
+                  success: true,
+                  message: "OTP resent successfully",
+                  resendCount: newCount,
+                  remainingResends: 3 - newCount,
+                });
+              }
+            },
+          );
+        }
+      },
+    );
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
 };
