@@ -244,37 +244,57 @@ exports.getOurStories = (req, res) => {
 
 exports.siteInfo = async (req, res) => {
   try {
-    query(
-      `SELECT * FROM am_price_list`,
-      async (error, tenant) => {
-        if (error) {
-          console.error("Database error:", error);
 
-          return res.status(500).json({
-            success: 0,
-            message: "Failed to check shop!",
-          });
-        }
-        else if (tenant?.length == 0) {
-          return res.status(200).json({
-            success: 1,
-            register_count: 0,
-            message: "success",
-          });
-        } else {
+    let subdomain = 'default'
 
-          let priceData = tenant;
+    if (req?.body?.subdomain) {
+      subdomain = req?.body?.subdomain
+    }
 
-          const siteInfoData = await getSiteInfo(req?.body?.shop_name)
+    query(`SELECT * FROM am_price_list WHERE subdomain = ?;
+      SELECT * FROM am_price_list WHERE subdomain = 'default'`, [subdomain], async (error, priceData) => {
+      if (error) {
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to check shop!",
+        });
+      }
+      else if (priceData[0]?.length == 0) {
 
-          return res.status(200).json({
-            success: 1,
-            priceData: priceData,
-            siteInfoData: siteInfoData,
-            message: "success",
-          });
-        }
-      },
+        priceData[1]?.map(e => {
+          delete e?.id
+          delete e?.subdomain
+          delete e?.created_at
+          return e
+        })
+
+        const siteInfoData = await getSiteInfo(req?.body?.shop_name)
+
+        return res.status(200).json({
+          success: 1,
+          priceData: priceData[1],
+          siteInfoData: siteInfoData,
+          message: "success",
+        });
+      } else {
+
+        priceData[0]?.map(e => {
+          delete e?.id
+          delete e?.subdomain
+          delete e?.created_at
+          return e
+        })
+
+        const siteInfoData = await getSiteInfo(req?.body?.shop_name)
+
+        return res.status(200).json({
+          success: 1,
+          priceData: priceData[0],
+          siteInfoData: siteInfoData,
+          message: "success",
+        });
+      }
+    },
     );
   } catch (error) {
     res.json({ status: 0, message: "Something went wrong!" });

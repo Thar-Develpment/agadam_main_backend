@@ -24,9 +24,16 @@ exports.login = async (req, res) => {
         });
     }
 
-    let getQuery = `SELECT id,subdomain,email,password FROM am_register WHERE email = ? LIMIT 1`;
+    let isSuper = 0
 
-    query(getQuery, [email], (err, data) => {
+    console.log("reqData?.type: ", reqData?.type);
+    if (reqData?.type === 'super') {
+        isSuper = 1
+    }
+
+    let getQuery = `SELECT id,subdomain,email,password FROM am_register WHERE email = ? AND isSuper = ? LIMIT 1`;
+
+    query(getQuery, [email, isSuper], (err, data) => {
         if (err) {
             return res.json({ status: 0, message: "Something went wrong" });
         } else if (data?.length == 0) {
@@ -1003,7 +1010,10 @@ exports.updateHeroSlide = async (req, res) => {
 
 exports.priceUpdateApi = async (req, res) => {
     try {
+
         const reqData = req.body;
+
+        const { subdomain } = req.user;
 
         const v = new Validator(reqData, {
             material: "required",
@@ -1040,20 +1050,36 @@ exports.priceUpdateApi = async (req, res) => {
             });
         }
 
-        let updateQuery = `UPDATE am_price_list SET ? WHERE purity = ? and material = ?`;
+        let updateQuery = `UPDATE am_price_list SET ? WHERE purity = ? AND material = ? AND subdomain = ?`;
 
         const values = { price: reqData.price }
 
-        query(
-            updateQuery,
-            [values, reqData.purity, reqData.material],
-            (err, updateResult) => {
-                if (err) {
-                    return res.json({ status: 0, message: "Failed to update price" });
-                } else {
-                    return res.json({ status: 1, message: "Price updated successfully" });
+        query(updateQuery, [values, reqData.purity, reqData.material, subdomain], (err, updateResult) => {
+            console.log("updateResult: ", updateResult);
+            if (err) {
+                return res.json({ status: 0, message: "Failed to update price" });
+            } else if (updateResult?.affectedRows > 0) {
+                return res.json({ status: 1, message: "Price updated successfully" });
+            } else {
+
+                let insertQuery = `INSERT INTO am_price_list SET ?`
+
+                let insertObj = {
+                    subdomain: subdomain,
+                    material: reqData.material,
+                    purity: reqData.purity,
+                    price: reqData.price
                 }
-            },
+
+                query(insertQuery, insertObj, (insErr, insSuc) => {
+                    if (insErr && !insSuc) {
+                        return res.json({ status: 0, message: "Failed to update price" });
+                    } else {
+                        return res.json({ status: 1, message: "Price updated successfully" });
+                    }
+                })
+            }
+        },
         );
     } catch (error) { }
 };
@@ -1210,9 +1236,9 @@ exports.updateSiteInfo = async (req, res) => {
                     youtube: "",
                     telegram: "",
                 }
-            } 
-            
-            if(reqData?.facebook || reqData?.whatsapp || reqData?.instagram || reqData?.twitter || reqData?.youtube || reqData?.telegram){
+            }
+
+            if (reqData?.facebook || reqData?.whatsapp || reqData?.instagram || reqData?.twitter || reqData?.youtube || reqData?.telegram) {
                 reqData.facebook ? social_urls.facebook = reqData.facebook : social_urls.facebook
                 reqData.whatsapp ? social_urls.whatsapp = reqData.whatsapp : social_urls.whatsapp
                 reqData.instagram ? social_urls.instagram = reqData.instagram : social_urls.instagram
