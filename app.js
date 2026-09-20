@@ -23,7 +23,7 @@ const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.11 })
+    res.json({ status: 0.12 })
 })
 
 app.use('/basic', basicRouter)
