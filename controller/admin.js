@@ -1359,7 +1359,7 @@ exports.activateSubdomain = async (req, res) => {
 
 const transporter = require("../config/node_mailer");
 
-exports.forgotPassword = async (req, res) => {
+exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -1375,7 +1375,6 @@ exports.forgotPassword = async (req, res) => {
       "SELECT id, email FROM am_register WHERE email = ? LIMIT 1",
       [email],
       (err, data) => {
-        console.log("err: ", err);
         if (err) {
           const errMsg = "Somthing-went wrong-ft!";
           return res.json({ status: 0, message: errMsg });
@@ -1569,8 +1568,7 @@ exports.resendOtp = async (req, res) => {
           if (user.otpCount >= 3) {
             return res.status(429).json({
               success: false,
-              message:
-                "Maximum OTP resend limit reached. Please try again later.",
+              message: "OTP limit reached. Please contact the Aadagam Admin Team for assistance",
             });
           }
 
