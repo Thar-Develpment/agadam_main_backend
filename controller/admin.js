@@ -1339,7 +1339,7 @@ exports.activateSubdomain = async (req, res) => {
 
   if (!matched) {
     return res.status(422).json({
-      success: false,
+      status: 0,
       message: "Validation failed",
       errors: v.errors,
     });
@@ -1365,7 +1365,7 @@ exports.sendOtp = async (req, res) => {
 
     if (!email) {
       return res.status(400).json({
-        success: false,
+        status: 0,
         message: "Email is required",
       });
     }
@@ -1380,7 +1380,7 @@ exports.sendOtp = async (req, res) => {
           return res.json({ status: 0, message: errMsg });
         } else if (data.length === 0) {
           return res.status(404).json({
-            success: false,
+            status: 0,
             message: "ft-Email not found",
           });
         } else {
@@ -1417,7 +1417,7 @@ exports.sendOtp = async (req, res) => {
                 });
 
                 return res.status(200).json({
-                  success: true,
+                  status: 1,
                   message: "OTP sent successfully",
                 });
               }
@@ -1430,7 +1430,7 @@ exports.sendOtp = async (req, res) => {
     console.error(error);
 
     return res.status(500).json({
-      success: false,
+      status: 0,
       message: "Something went wrong",
     });
   }
@@ -1442,14 +1442,14 @@ exports.resetPassword = async (req, res) => {
 
     if (!email || !otp || !newPassword) {
       return res.status(400).json({
-        success: false,
+        status: 0,
         message: "Email, OTP and new password are required",
       });
     }
 
     if (newPassword.length < 8) {
       return res.status(400).json({
-        success: false,
+        status: 0,
         message: "Password must be at least 8 characters",
       });
     }
@@ -1464,12 +1464,12 @@ exports.resetPassword = async (req, res) => {
       (err, data) => {
         if (err) {
           return res.status(404).json({
-            success: false,
+            status: 0,
             message: "Somethig-went wrong get-mail",
           });
         } else if (data.length === 0) {
           return res.status(404).json({
-            success: false,
+            status: 0,
             message: "rs - email not found!",
           });
         } else {
@@ -1478,7 +1478,7 @@ exports.resetPassword = async (req, res) => {
           // Verify OTP again
           if (+user.otp !== +otp) {
             return res.status(400).json({
-              success: false,
+              status: 0,
               message: "Invalid OTP",
             });
           }
@@ -1489,7 +1489,7 @@ exports.resetPassword = async (req, res) => {
             new Date(user.reset_otp_expires_at) < new Date()
           ) {
             return res.status(400).json({
-              success: false,
+              status: 0,
               message: "OTP expired",
             });
           }
@@ -1510,12 +1510,12 @@ exports.resetPassword = async (req, res) => {
               console.log("err: ", err);
               if (err) {
                 return res.json({
-                  success: false,
+                  status: 0,
                   message: "reset-password update Failure!",
                 });
               } else {
                 return res.status(200).json({
-                  success: true,
+                  status: 1,
                   message: "Password reset successfully",
                 });
               }
@@ -1526,7 +1526,7 @@ exports.resetPassword = async (req, res) => {
     );
   } catch (error) {
     return res.status(500).json({
-      success: false,
+      status: 0,
       message: "Something went wrong",
     });
   }
@@ -1538,7 +1538,7 @@ exports.resendOtp = async (req, res) => {
 
     if (!email) {
       return res.status(400).json({
-        success: false,
+        status: 0,
         message: "Email is required",
       });
     }
@@ -1553,12 +1553,12 @@ exports.resendOtp = async (req, res) => {
       async (err, data) => {
         if (err) {
           return res.status(404).json({
-            success: false,
+            status: 0,
             message: "rsp - email not found!",
           });
         } else if (data.length === 0) {
           return res.status(404).json({
-            success: false,
+            status: 0,
             message: "Email not found",
           });
         } else {
@@ -1567,7 +1567,7 @@ exports.resendOtp = async (req, res) => {
           // Maximum 3 resend attempts
           if (user.otpCount >= 3) {
             return res.status(429).json({
-              success: false,
+              status: 0,
               message: "OTP limit reached. Please contact the Aadagam Admin Team for assistance",
             });
           }
@@ -1592,7 +1592,7 @@ exports.resendOtp = async (req, res) => {
             async (err, updatedData) => {
               if (err) {
                 return res.json({
-                  success: false,
+                  status: 0,
                   message: "Rt-up Somthing-went wrong!.",
                 });
               } else {
@@ -1615,7 +1615,7 @@ exports.resendOtp = async (req, res) => {
                 });
 
                 return res.status(200).json({
-                  success: true,
+                  status: 1,
                   message: "OTP resent successfully",
                   resendCount: newCount,
                   remainingResends: 3 - newCount,
