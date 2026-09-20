@@ -1090,11 +1090,11 @@ exports.adminDashboard = async (req, res) => {
         query(
             `SELECT COUNT(id) as register_count FROM am_register;SELECT material,purity,price FROM am_price_list`,
             async (error, tenant) => {
-                console.log("tenant: ", tenant);
                 if (error) {
                     console.error("Database error:", error);
 
                     return res.status(500).json({
+                        status: 0,
                         success: 0,
                         message: "Failed to check shop!",
                     });
@@ -1102,6 +1102,7 @@ exports.adminDashboard = async (req, res) => {
 
                     let priceData = tenant[1]
                     return res.status(200).json({
+                        status: 1,
                         success: 1,
                         register_count: tenant[0][0].register_count,
                         priceData: priceData,

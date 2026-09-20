@@ -2,7 +2,15 @@ const query = require("../model/db")
 
 exports.checkPayment = (req, res, next) => {
 
-    let subDomain = req?.body?.subdomain
+    const { subdomain } = req?.user;
+
+    let subDomain;
+
+    if (subdomain) {
+        subDomain = subdomain
+    } else {
+        subDomain = req?.body?.shop_name + '.aadagam.com'
+    }
 
     let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ?`
 

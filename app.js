@@ -14,16 +14,16 @@ app.use(helmet())
 const PORT = config.PORT
 const authRouter = require('./routes/auth')
 app.use(
-  "/swagger",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument)
+    "/swagger",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument)
 );
 const basicRouter = require('./routes/basic')
 const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.10 })
+    res.json({ status: 0.11 })
 })
 
 app.use('/basic', basicRouter)

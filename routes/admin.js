@@ -6,22 +6,23 @@ const multer = require("multer");
 const image = require('../controller/image_upload')
 const upload = multer({
   storage: multer.memoryStorage(),
-   limits: {
+  limits: {
     fileSize: 100 * 1024 * 1024, // 100 MB
     files: 10,
   },
   fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpg","image/jpeg", "image/png", "image/webp"];
+    const allowed = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
 
-  // if (allowed.includes(file.mimetype)) {
+    // if (allowed.includes(file.mimetype)) {
     cb(null, true);
-  // } else {
-  //   cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
-  // }
+    // } else {
+    //   cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
+    // }
   },
 });
 // const {upload } = require('../helper/upload')
 const { uploadImages } = require("../controller/image_contoller");
+const { checkPayment } = require('../helper/utils');
 
 
 router.post('/login', admin.login)
@@ -60,14 +61,14 @@ router.post('/get_all_hero_slide', authenticateToken, admin.getAllHeroSlide)
 router.post('/get_single_hero_slide', authenticateToken, admin.getSingleHeroSlide)
 router.post('/update_hero_slide', authenticateToken, admin.updateHeroSlide)
 
-router.get('/dash_board', authenticateToken, admin.adminDashboard)
+router.get('/dash_board', authenticateToken, checkPayment, admin.adminDashboard)
 router.post('/price_update', authenticateToken, admin.priceUpdateApi)
 
 router.post('/get_all_tenants', admin.getAllTenants)
 router.post('/toggle_tenant_status', admin.toggleTenantStatus)
 
 router.post(
-  "/upload",authenticateToken,
+  "/upload", authenticateToken,
   upload.array("images", 10),
   uploadImages
 );
