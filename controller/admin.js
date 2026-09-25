@@ -1231,7 +1231,7 @@ exports.updateSiteInfo = async (req, res) => {
 
   const v = new Validator(reqData, {
     logo: "required|string|maxLength:250",
-    city: "required|string|maxLength:30",
+    city: "required|string|maxLength:250",
     address: "required|string|maxLength:1500",
     phone: "required|string|maxLength:15",
     contact_us: "required|string|maxLength:30",
