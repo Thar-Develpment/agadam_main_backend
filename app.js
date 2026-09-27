@@ -21,9 +21,10 @@ app.use(
 const basicRouter = require('./routes/basic')
 const subDomainRouter = require('./routes/sub_domain')
 const adminRouter = require('./routes/admin')
+require('./controller/price_cron')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.13 })
+    res.json({ status: 0.14 })
 })
 
 app.use('/basic', basicRouter)
