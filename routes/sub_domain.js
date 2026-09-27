@@ -15,4 +15,6 @@ router.post("/our_stories", checkPayment, subDomain.getOurStories);
 
 router.post("/site_info", checkPayment, subDomain.siteInfo)
 
+router.post("/get_all_hero_slide", checkPayment, subDomain.getAllHeroSlide)
+
 module.exports = router;

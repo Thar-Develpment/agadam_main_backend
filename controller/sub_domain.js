@@ -329,3 +329,45 @@ async function getSiteInfo(shopName) {
   })
 
 };
+
+
+exports.getAllHeroSlide = async (req, res) => {
+
+  let reqData = req.body;
+
+  const { pageNo, pageSize, subdomain } = reqData;
+
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  const offset = pageNo * pageSize;
+
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_hero_slide WHERE subdomain = ?;`;
+
+  const getQuery = `SELECT * FROM am_hero_slide WHERE subdomain = ? ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [subdomain, subdomain, pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
+    }
+  });
+};
