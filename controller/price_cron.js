@@ -22,7 +22,7 @@ function getGoldPrice() {
       const $ = cheerio.load(html);
 
       let gold22k = 0;
-      let gold22kChange = 0;
+      let gold22kChange = '+0';
 
       $("table tr").each((_, row) => {
         const cells = $(row)
@@ -33,7 +33,7 @@ function getGoldPrice() {
         if (cells.length >= 3 && cells[0] === "1") {
           let getTrimedData = cells[2].replaceAll('\t', '')
           gold22k = getTrimedData.replaceAll('\t', '').replaceAll('\t', '').split('₹')[1].split('(')[0].replace(',', '').trim()
-          gold22kChange = getTrimedData.replaceAll('\t', '').split('(')[1].split(')')[0].trim()
+          gold22kChange = getTrimedData?.replaceAll('\t', '')?.split('(')[1]?.split(')')[0]?.trim() || gold22kChange
         }
       });
 
@@ -68,7 +68,7 @@ function getSilverPrice() {
       const $ = cheerio.load(html);
 
       let silver = 0;
-      let silverChange = 0;
+      let silverChange = '+0';
 
       $("table tr").each((_, row) => {
         const cells = $(row)
@@ -79,7 +79,7 @@ function getSilverPrice() {
         if (cells.length >= 3 && cells[0] === "1") {
           silver = cells[1].replaceAll('₹', '').trim()
           let perSplit = cells[3].split('₹')
-          silverChange = perSplit[0].trim() + perSplit[1]
+          silverChange = perSplit[1] ? perSplit[0]?.trim() + perSplit[1] : silverChange
         }
       });
 
