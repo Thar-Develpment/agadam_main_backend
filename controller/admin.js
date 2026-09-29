@@ -1307,7 +1307,7 @@ exports.updateSiteInfo = async (req, res) => {
         contact_us,
         whatsapp_no,
         social_urls: socialUrlsStr,
-        tamil_shop_name: reqData?.tamil_shop_name || NULL
+        tamil_shop_name: reqData?.tamil_shop_name || null
       };
 
       query(updateQuery, [payload, subdomain], (err, data) => {
