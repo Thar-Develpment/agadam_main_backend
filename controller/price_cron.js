@@ -128,16 +128,16 @@ function getAndUpdateGoldAndSilverPrice() {
 }
 
 
-// const cron = require('node-cron');
-// const query = require("../model/db");
+const cron = require('node-cron');
+const query = require("../model/db");
 
-// // every 10 mins
+// every 10 mins
 
-// cron.schedule('*/10 * * * * 1-7', () => {
+cron.schedule('*/10 * * * * 1-7', () => {
 
-//   getAndUpdateGoldAndSilverPrice()
+   getAndUpdateGoldAndSilverPrice()
 
-// }, {
-//   scheduled: true,
-//   timezone: "Asia/Kolkata"
-// });
+ }, {
+   scheduled: true,
+   timezone: "Asia/Kolkata"
+ });
