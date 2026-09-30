@@ -1301,7 +1301,7 @@ exports.updateSiteInfo = async (req, res) => {
 
       let payload = {
         logo,
-        large_logo: reqData?.large_logo || null
+        large_logo: reqData?.large_logo || null,
         city,
         address,
         phone,
