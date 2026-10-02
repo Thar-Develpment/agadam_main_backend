@@ -1194,7 +1194,7 @@ exports.priceUpdateApi = async (req, res) => {
       });
     }
 
-    let purity = ["22k", "18k", "24k"];
+    let purity = ["22k", "18k", "24k", "925"];
     let material = ["gold", "silver"];
 
     if (!purity.includes(reqData.purity)) {
