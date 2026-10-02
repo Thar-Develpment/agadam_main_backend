@@ -97,8 +97,6 @@ function getAndUpdateGoldAndSilverPrice() {
   return new Promise(async (resolve, reject) => {
 
     const [gold22k, silver] = await Promise.all([getGoldPrice(), getSilverPrice()])
-    console.log("silver: ", silver);
-    console.log("gold22k: ", gold22k);
 
     let updateQuery = ``
     const values = []
@@ -121,12 +119,8 @@ function getAndUpdateGoldAndSilverPrice() {
 
     }
 
-    console.log("updateQuery: ", updateQuery);
     if (updateQuery) {
-      query(updateQuery, values, (err, data) => {
-        console.log(err, "errrrr");
-        console.log(data, "cron update data");
-      })
+      query(updateQuery, values, () => {})
     }
 
   })
@@ -139,7 +133,7 @@ const query = require("../model/db");
 
 // every 10 mins
 
-cron.schedule('*/10 * * * * 1-6', () => {
+cron.schedule('*/10 * * * 1-6', () => {
 
   console.log('cron triggered ' + new Date());
 
