@@ -62,7 +62,7 @@ router.post('/get_single_hero_slide', authenticateToken, admin.getSingleHeroSlid
 router.post('/update_hero_slide', authenticateToken, admin.updateHeroSlide)
 
 
-router.post('/add_basic_asset', authenticateToken, admin.getAllBasicAsset)
+router.post('/add_basic_asset', authenticateToken, admin.addBasicAsset)
 router.post('/get_all_basic_asset', authenticateToken, admin.getAllBasicAsset)
 router.post('/get_single_basic_asset', authenticateToken, admin.getSingleBasicAsset)
 router.post('/update_basic_asset', authenticateToken, admin.updateBasicAsset)

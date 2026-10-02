@@ -121,8 +121,12 @@ function getAndUpdateGoldAndSilverPrice() {
 
     }
 
+    console.log("updateQuery: ", updateQuery);
     if (updateQuery) {
-      query(updateQuery, values, () => { })
+      query(updateQuery, values, (err, data) => {
+        console.log(err, "errrrr");
+        console.log(data, "cron update data");
+      })
     }
 
   })
@@ -136,6 +140,8 @@ const query = require("../model/db");
 // every 10 mins
 
 cron.schedule('*/10 * * * * 1-6', () => {
+
+  console.log('cron triggered ' + new Date());
 
   getAndUpdateGoldAndSilverPrice()
 
