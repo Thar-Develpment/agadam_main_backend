@@ -107,7 +107,7 @@ function getAndUpdateGoldAndSilverPrice() {
 
       const { gold22kPrice, gold22kChange } = gold22k.data
 
-      updateQuery += `UPDATE am_price_list SET price = ?, change = ? WHERE purity = ? AND material = ? AND subdomain = ?;`
+      updateQuery += `UPDATE am_price_list SET price = ?, \`change\` = ? WHERE purity = ? AND material = ? AND subdomain = ?;`
       values.push(gold22kPrice, gold22kChange, '22k', 'gold', 'default')
 
     }
@@ -116,7 +116,7 @@ function getAndUpdateGoldAndSilverPrice() {
 
       const { silverPrice, silverChange } = silver.data
 
-      updateQuery += `UPDATE am_price_list SET price = ?, change = ? WHERE purity = ? AND material = ? AND subdomain = ?`
+      updateQuery += `UPDATE am_price_list SET price = ?, \`change\` = ? WHERE purity = ? AND material = ? AND subdomain = ?`
       values.push(silverPrice, silverChange, '925', 'silver', 'default')
 
     }
