@@ -131,11 +131,7 @@ function getAndUpdateGoldAndSilverPrice() {
 const cron = require('node-cron');
 const query = require("../model/db");
 
-// every 10 mins
-
 cron.schedule('*/10 * * * 1-6', () => {
-
-  console.log('cron triggered ' + new Date());
 
   getAndUpdateGoldAndSilverPrice()
 
