@@ -999,6 +999,179 @@ exports.updateHeroSlide = async (req, res) => {
   });
 };
 
+
+exports.addBasicAsset = async (req, res) => {
+
+  let reqData = req.body;
+
+  const { subdomain } = req.user;
+
+  // if (subdomain != 'default') {
+  //   return res.json({ status: 0, message: 'Unauthorized' });
+  // }
+
+  const { type, url } = reqData;
+
+  const v = new Validator(reqData, {
+    type: "required|in:special_image,special_video",
+    url: "required|string|maxLength:250",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  let insertQuery = `INSERT INTO am_basic_assets SET ?`;
+
+  let payload = {
+    type,
+    url,
+  };
+
+  query(insertQuery, payload, (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Asset already exists`
+        : "Failed to add Asset";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Asset added successfully" });
+    }
+  });
+};
+
+exports.getAllBasicAsset = async (req, res) => {
+
+  let reqData = req.body;
+
+  const { subdomain } = req.user;
+
+  const { pageNo, pageSize } = reqData;
+
+  const v = new Validator(reqData, {
+    pageNo: "required|numeric",
+    pageSize: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  const offset = pageNo * pageSize;
+
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_basic_assets WHERE type IN ('special_image','special_video')`;
+
+  const getQuery = `SELECT * FROM am_basic_assets WHERE type IN ('special_image','special_video') ORDER BY id DESC LIMIT ? OFFSET ?`;
+
+  const finalQuery = countQuery + getQuery;
+
+  query(finalQuery, [pageSize, offset], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data[0][0]?.totalRecords == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      const totalCount = data[0][0]?.totalRecords || 0;
+      return res.json({ status: 1, totalRecords: totalCount, data: data[1] });
+    }
+  });
+};
+
+exports.getSingleBasicAsset = async (req, res) => {
+
+  let reqData = req.body;
+
+  const { subdomain } = req.user;
+
+  const { id } = reqData;
+
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  let getQuery = `SELECT * FROM am_basic_assets WHERE id = ? AND type IN ('special_image','special_video')`;
+
+  query(getQuery, [id], (err, data) => {
+    if (err) {
+      return res.json({ status: 0, message: "Something went wrong" });
+    } else if (data?.length == 0) {
+      return res.json({ status: 0, message: "No data found" });
+    } else {
+      return res.json({ status: 1, data: data[0] });
+    }
+  });
+};
+
+exports.updateBasicAsset = async (req, res) => {
+
+  let reqData = req.body;
+
+  const { subdomain } = req.user;
+
+  const { id, type, url, status } = reqData;
+
+  const v = new Validator(reqData, {
+    id: "required|numeric",
+    type: "required|in:special_image,special_video",
+    url: "required|string|maxLength:250",
+    status: "required|in:0,1",
+  });
+
+  const matched = await v.check();
+
+  if (!matched) {
+    return res.status(422).json({
+      success: false,
+      message: "Validation failed",
+      errors: v.errors,
+    });
+  }
+
+  let insertQuery = `UPDATE am_basic_assets SET ? WHERE id = ? AND type IN ('special_image','special_video')`;
+
+  let payload = {
+    type,
+    url,
+    status,
+  };
+
+  query(insertQuery, [payload, id], (err, data) => {
+    if (err) {
+      const isDuplicate = err.code == "ER_DUP_ENTRY";
+      const errMsg = isDuplicate
+        ? `Asset already exists`
+        : "Failed to update Asset";
+      return res.json({ status: 0, message: errMsg });
+    } else {
+      return res.json({ status: 1, message: "Asset updated successfully" });
+    }
+  });
+};
+
+
 exports.priceUpdateApi = async (req, res) => {
   try {
     const reqData = req.body;
@@ -1076,7 +1249,7 @@ exports.priceUpdateApi = async (req, res) => {
         }
       },
     );
-  } catch (error) {}
+  } catch (error) { }
 };
 
 exports.adminDashboard = async (req, res) => {

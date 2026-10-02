@@ -97,6 +97,8 @@ function getAndUpdateGoldAndSilverPrice() {
   return new Promise(async (resolve, reject) => {
 
     const [gold22k, silver] = await Promise.all([getGoldPrice(), getSilverPrice()])
+    console.log("silver: ", silver);
+    console.log("gold22k: ", gold22k);
 
     let updateQuery = ``
     const values = []
@@ -105,8 +107,8 @@ function getAndUpdateGoldAndSilverPrice() {
 
       const { gold22kPrice, gold22kChange } = gold22k.data
 
-      updateQuery += `UPDATE am_price_list SET price = ? WHERE purity = ? AND material = ? AND subdomain = ?;`
-      values.push(gold22kPrice, '22k', 'gold', 'default')
+      updateQuery += `UPDATE am_price_list SET price = ?, change = ? WHERE purity = ? AND material = ? AND subdomain = ?;`
+      values.push(gold22kPrice, gold22kChange, '22k', 'gold', 'default')
 
     }
 
@@ -114,13 +116,13 @@ function getAndUpdateGoldAndSilverPrice() {
 
       const { silverPrice, silverChange } = silver.data
 
-      updateQuery += `UPDATE am_price_list SET price = ? WHERE purity = ? AND material = ? AND subdomain = ?`
-      values.push(silverPrice, '22k', 'silver', 'default')
+      updateQuery += `UPDATE am_price_list SET price = ?, change = ? WHERE purity = ? AND material = ? AND subdomain = ?`
+      values.push(silverPrice, silverChange, '925', 'silver', 'default')
 
     }
 
     if (updateQuery) {
-      query(updateQuery, values,()=>{})
+      query(updateQuery, values, () => { })
     }
 
   })
@@ -133,11 +135,11 @@ const query = require("../model/db");
 
 // every 10 mins
 
-cron.schedule('*/10 * * * * 1-7', () => {
+cron.schedule('*/10 * * * * 1-6', () => {
 
-   getAndUpdateGoldAndSilverPrice()
+  getAndUpdateGoldAndSilverPrice()
 
- }, {
-   scheduled: true,
-   timezone: "Asia/Kolkata"
- });
+}, {
+  scheduled: true,
+  timezone: "Asia/Kolkata"
+});

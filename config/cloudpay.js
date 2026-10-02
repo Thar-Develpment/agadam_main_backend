@@ -28,7 +28,3 @@ const cloudpe = new S3Client({
 });
 
 module.exports = cloudpe;
-
-
-
-// module.exports = cloudpay;

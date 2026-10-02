@@ -32,15 +32,22 @@ exports.getBasicAssets = async (req, res) => {
             let imageArr = []
             let videoArr = []
 
+            let specialImageArr = []
+            let specialVideoArr = []
+
             data.map(e => {
                 if (e.type == 'image') {
                     imageArr.push(e.url)
                 } else if (e.type == 'video') {
                     videoArr.push(e.url)
+                } else if (e.type == 'special_image') {
+                    specialImageArr.push(e.url)
+                } else if (e.type == 'special_video') {
+                    specialVideoArr.push(e.url)
                 }
             })
 
-            return res.json({ status: 1, image: { data: imageArr, count: imageArr?.length || 0 }, video: { data: videoArr, count: videoArr?.length || 0 } });
+            return res.json({ status: 1, image: { data: imageArr, count: imageArr?.length || 0 }, video: { data: videoArr, count: videoArr?.length || 0 }, specialImage: { data: specialImageArr, count: specialImageArr?.length || 0 }, specialVideo: { data: specialVideoArr, count: specialVideoArr?.length || 0 } });
         }
     });
 };
