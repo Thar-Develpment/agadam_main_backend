@@ -1072,7 +1072,7 @@ exports.getAllBasicAsset = async (req, res) => {
 
   const offset = pageNo * pageSize;
 
-  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_basic_assets WHERE type IN ('special_image','special_video')`;
+  const countQuery = `SELECT COUNT(id) AS totalRecords FROM am_basic_assets WHERE type IN ('special_image','special_video');`;
 
   const getQuery = `SELECT * FROM am_basic_assets WHERE type IN ('special_image','special_video') ORDER BY id DESC LIMIT ? OFFSET ?`;
 
