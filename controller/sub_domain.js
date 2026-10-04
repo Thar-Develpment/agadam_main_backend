@@ -270,12 +270,17 @@ exports.siteInfo = async (req, res) => {
 
         const siteInfoData = await getSiteInfo(req?.body?.shop_name)
 
-        return res.status(200).json({
+        if (Object.keys(siteInfoData).length === 0) {
+          return res.redirect("https://aadagam.com/404")
+        } else {
+
+          return res.status(200).json({
           success: 1,
           priceData: priceData[1],
           siteInfoData: siteInfoData,
           message: "success",
-        });
+          });
+        }  
       } else {
 
         priceData[0]?.map(e => {
