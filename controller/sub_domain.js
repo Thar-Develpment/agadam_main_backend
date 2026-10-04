@@ -271,7 +271,7 @@ exports.siteInfo = async (req, res) => {
         const siteInfoData = await getSiteInfo(req?.body?.shop_name)
 
         if (Object.keys(siteInfoData).length === 0) {
-          return res.redirect("https://aadagam.com/404")
+          return res.status(200).json({ redirectUrl: 'https://aadagam.com/404' });
         } else {
 
           return res.status(200).json({
