@@ -37,9 +37,11 @@ exports.checkPayment = (req, res, next) => {
 
                 const now = new Date();
 
-                const diffInMs = now - createdDate;
+                const diffInMs = now.getTime() - createdDate.getTime();
 
-                const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+                const diffInHours = diffInMs / (1000 * 60 * 60);
+                console.log("diffInHours: ", diffInHours);
+                const diffInDays = diffInHours / 24;
                 console.log("diffInDays: ", diffInDays);
 
                 if (diffInDays > 2) {
