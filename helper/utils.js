@@ -14,10 +14,9 @@ exports.checkPayment = (req, res, next) => {
         subDomain = subdomain
     }
 
-    let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ? AND status = ?`
+    let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ?`
 
-    console.log("subDomain 77777: ", subDomain);
-    query(getQuery, [subDomain, 1], (err, data) => {
+    query(getQuery, [subDomain], (err, data) => {
         if (err) {
             return res.json({ status: 0, message: "Something went wrong!" })
         } else if (data?.length == 0) {
@@ -25,26 +24,14 @@ exports.checkPayment = (req, res, next) => {
         } else {
 
             let singleData = data[0]
-            console.log("singleData: ", singleData);
 
-            console.log("!singleData?.payment_at: ", !singleData?.payment_at);
             if (!singleData?.payment_at) {
 
                 const createdDate = singleData?.created_at;
-                console.log("createdDate: ", createdDate);
 
                 const now = new Date();
 
                 const diffInMs = now.getTime() - createdDate.getTime();
-
-                const diffInHours = diffInMs / (1000 * 60 * 60);
-                const diffInDays = diffInHours / 24;
-
-                console.log("createdDate:", createdDate.toISOString());
-                console.log("now:", now.toISOString());
-                console.log("diffInMs:", diffInMs);
-                console.log("diffInHours:", diffInHours);
-                console.log("diffInDays:", diffInDays);
 
                 // 48 hours
                 const TWO_DAYS_IN_MS = 48 * 60 * 60 * 1000;
