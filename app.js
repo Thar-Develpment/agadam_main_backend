@@ -24,7 +24,7 @@ const adminRouter = require('./routes/admin')
 require('./controller/price_cron')
 
 app.get('/', (req, res) => {
-    res.json({ status: 0.17 })
+    res.json({ status: 0.18 })
 })
 
 app.use('/basic', basicRouter)

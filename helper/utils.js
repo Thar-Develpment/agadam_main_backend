@@ -16,6 +16,7 @@ exports.checkPayment = (req, res, next) => {
 
     let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ? AND status = ?`
 
+    console.log("subDomain 77777: ", subDomain);
     query(getQuery, [subDomain, 1], (err, data) => {
         if (err) {
             return res.json({ status: 0, message: "Something went wrong!" })
@@ -24,18 +25,22 @@ exports.checkPayment = (req, res, next) => {
         } else {
 
             let singleData = data[0]
+            console.log("singleData: ", singleData);
 
+            console.log("!singleData?.payment_at: ", !singleData?.payment_at);
             if (!singleData?.payment_at) {
 
                 const createdAt = singleData?.created_at?.toString()
 
                 const createdDate = new Date(createdAt?.replace(" ", "T"));
+                console.log("createdDate: ", createdDate);
 
                 const now = new Date();
 
                 const diffInMs = now - createdDate;
 
                 const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+                console.log("diffInDays: ", diffInDays);
 
                 if (diffInDays > 2) {
                     deActivateSubDomain(subDomain)
@@ -57,6 +62,6 @@ function deActivateSubDomain(subDomain) {
 
     const query = `UPDATE am_register SET status = 0 WHERE subdomain = ?`
 
-    query(query, [subDomain])
+    query(query, [subDomain], () => { })
 
 }
