@@ -30,10 +30,7 @@ exports.checkPayment = (req, res, next) => {
             console.log("!singleData?.payment_at: ", !singleData?.payment_at);
             if (!singleData?.payment_at) {
 
-                const createdAt = singleData?.created_at?.toString()
-
-                console.log("created_at RAW:", singleData?.created_at);
-                console.log("created_at TYPE:", typeof singleData?.created_at);
+                const createdAt = singleData?.created_at
 
                 const createdDate = new Date(createdAt?.replace(" ", "T"));
                 console.log("createdDate: ", createdDate);
@@ -43,11 +40,18 @@ exports.checkPayment = (req, res, next) => {
                 const diffInMs = now.getTime() - createdDate.getTime();
 
                 const diffInHours = diffInMs / (1000 * 60 * 60);
-                console.log("diffInHours: ", diffInHours);
                 const diffInDays = diffInHours / 24;
-                console.log("diffInDays: ", diffInDays);
 
-                if (diffInDays > 2) {
+                console.log("createdDate:", createdDate.toISOString());
+                console.log("now:", now.toISOString());
+                console.log("diffInMs:", diffInMs);
+                console.log("diffInHours:", diffInHours);
+                console.log("diffInDays:", diffInDays);
+
+                // 48 hours
+                const TWO_DAYS_IN_MS = 48 * 60 * 60 * 1000;
+
+                if (diffInMs >= TWO_DAYS_IN_MS) {
                     deActivateSubDomain(subDomain)
                     return res.json({ status: 3, message: "Payment pending" })
                 } else {
