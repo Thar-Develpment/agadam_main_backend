@@ -32,6 +32,9 @@ exports.checkPayment = (req, res, next) => {
 
                 const createdAt = singleData?.created_at?.toString()
 
+                console.log("created_at RAW:", singleData?.created_at);
+                console.log("created_at TYPE:", typeof singleData?.created_at);
+
                 const createdDate = new Date(createdAt?.replace(" ", "T"));
                 console.log("createdDate: ", createdDate);
 
