@@ -14,13 +14,13 @@ exports.checkPayment = (req, res, next) => {
         subDomain = subdomain
     }
 
-    let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ?`
+    let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ? AND status = ?`
 
-    query(getQuery, [subDomain], (err, data) => {
+    query(getQuery, [subDomain, 1], (err, data) => {
         if (err) {
             return res.json({ status: 0, message: "Something went wrong!" })
         } else if (data?.length == 0) {
-            return res.status(200).json({ redirectUrl: 'https://aadagam.com/404' });
+            return res.json({ status: 2, message: "Shop not found!" })
         } else {
 
             let singleData = data[0]
@@ -39,7 +39,7 @@ exports.checkPayment = (req, res, next) => {
 
                 if (diffInDays > 2) {
                     deActivateSubDomain(subDomain)
-                    return res.json({ status: 0, message: "Payment pending" })
+                    return res.json({ status: 3, message: "Payment pending" })
                 } else {
                     next()
                 }

@@ -270,17 +270,12 @@ exports.siteInfo = async (req, res) => {
 
         const siteInfoData = await getSiteInfo(req?.body?.shop_name)
 
-        if (Object.keys(siteInfoData).length === 0) {
-          return res.status(200).json({ redirectUrl: 'https://aadagam.com/404' });
-        } else {
-
-          return res.status(200).json({
+        return res.status(200).json({
           success: 1,
           priceData: priceData[1],
           siteInfoData: siteInfoData,
           message: "success",
-          });
-        }  
+        });
       } else {
 
         priceData[0]?.map(e => {
@@ -312,13 +307,13 @@ async function getSiteInfo(shopName) {
 
   return new Promise((resolve, reject) => {
 
-    let getQuery = `SELECT * FROM am_register WHERE shop_name = ?`;
+    let getQuery = `SELECT * FROM am_register WHERE shop_name = ? AND status = ?`;
 
     if (!shopName) {
       return resolve({})
     }
 
-    query(getQuery, [shopName], (err, data) => {
+    query(getQuery, [shopName, 1], (err, data) => {
       if (err) {
         return resolve({});
       } else if (data?.length == 0) {
