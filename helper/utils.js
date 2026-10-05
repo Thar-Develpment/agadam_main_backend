@@ -67,8 +67,8 @@ exports.checkPayment = (req, res, next) => {
 
 function deActivateSubDomain(subDomain) {
 
-    const query = `UPDATE am_register SET status = 0 WHERE subdomain = ?`
+    const getQuery = `UPDATE am_register SET status = 0 WHERE subdomain = ?`
 
-    query(query, [subDomain], () => { })
+    query(getQuery, [subDomain], () => { })
 
 }
