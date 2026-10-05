@@ -20,7 +20,7 @@ exports.checkPayment = (req, res, next) => {
         if (err) {
             return res.json({ status: 0, message: "Something went wrong!" })
         } else if (data?.length == 0) {
-            return res.json({ status: 0, message: "Shop not found!" })
+            return res.redirect("https://aadagam.com/404")
         } else {
 
             let singleData = data[0]
