@@ -1520,7 +1520,7 @@ exports.activateSubdomain = async (req, res) => {
     });
   }
 
-  let updateQuery = `UPDATE am_register SET status = ?,payment_at = NOW() WHERE id = ?`;
+  let updateQuery = `UPDATE am_register SET status = IF(status = 0,1,0),payment_at = IF(status = 0,NOW(),NULL) WHERE id = ?`;
 
   query(updateQuery, [1, id], (err, data) => {
     if (err) {
