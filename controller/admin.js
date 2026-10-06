@@ -1521,15 +1521,9 @@ exports.activateSubdomain = async (req, res) => {
     });
   }
 
-  let payment_at
+  let payment_at = reqData?.status ? 'NOW()' : 'NULL'
 
-  if(reqData?.status){
-    payment_at = `NOW()`
-  } else {
-    payment_at = `NULL`
-  }
-
-  let updateQuery = `UPDATE am_register SET status = ?,payment_at = '${payment_at}' WHERE id = ?`;
+  let updateQuery = `UPDATE am_register SET status = ?,payment_at = ${payment_at} WHERE id = ?`;
 
   query(updateQuery, [status, id], (err, data) => {
     if (err) {
