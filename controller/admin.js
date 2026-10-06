@@ -1502,9 +1502,10 @@ exports.updateSiteInfo = async (req, res) => {
 // when payment done
 
 exports.activateSubdomain = async (req, res) => {
+  
   let reqData = req.body;
 
-  const { id } = reqData;
+  const { id, status } = reqData;
 
   const v = new Validator(reqData, {
     id: "required|numeric",
@@ -1520,9 +1521,17 @@ exports.activateSubdomain = async (req, res) => {
     });
   }
 
-  let updateQuery = `UPDATE am_register SET status = IF(status = 1,1,0),payment_at = IF(status = 1,NOW(),NULL) WHERE id = ?`;
+  let payment_at
 
-  query(updateQuery, [1, id], (err, data) => {
+  if(reqData?.status){
+    payment_at = `NOW()`
+  } else {
+    payment_at = `NULL`
+  }
+
+  let updateQuery = `UPDATE am_register SET status = ?,payment_at = '${payment_at}' WHERE id = ?`;
+
+  query(updateQuery, [status, id], (err, data) => {
     if (err) {
       const errMsg = "Failed to activate site";
       return res.json({ status: 0, message: errMsg });
