@@ -362,7 +362,6 @@ exports.updateGallery = async (req, res) => {
   let payload = {
     category_id,
     image_url,
-    category_name,
     status,
   };
 
