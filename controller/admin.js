@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
     isSuper = 1;
   }
 
-  let getQuery = `SELECT id,subdomain,email,password FROM am_register WHERE email = ? AND isSuper = ? LIMIT 1`;
+  let getQuery = `SELECT id,subdomain,email,password,isSuper,created_at,payment_at,shop_name,status FROM am_register WHERE email = ? AND isSuper = ? LIMIT 1`;
 
   query(getQuery, [email, isSuper], (err, data) => {
     if (err) {
@@ -42,9 +42,21 @@ exports.login = async (req, res) => {
       if (password === userData.password) {
         let authTkn = generateJwtToken(userData);
 
+        const createdAt = userData.created_at ? new Date(userData.created_at) : new Date();
+        const trialEndsAt = new Date(createdAt.getTime() + 48 * 60 * 60 * 1000);
+        const isPaid = userData.payment_at !== null && userData.payment_at !== undefined;
+
+        delete userData.password;
+
+        userData.is_paid = isPaid;
+        userData.subscription_status = isPaid ? 'active' : (Date.now() >= trialEndsAt.getTime() ? 'expired' : 'trial');
+        userData.trial_ends_at = trialEndsAt.toISOString();
+        userData.server_time = new Date().toISOString();
+
         return res.json({
           status: 1,
           authTkn: authTkn,
+          tenantData: userData,
           message: "Login success",
         });
       } else {

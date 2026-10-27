@@ -14,7 +14,12 @@ exports.checkPayment = (req, res, next) => {
         subDomain = subdomain
     }
 
-    let getQuery = `SELECT id,subdomain,status,created_at,payment_at FROM am_register WHERE subdomain = ?`
+    // Bypass payment check for Super Admin
+    if (req?.user?.isSuper === 1) {
+        return next();
+    }
+
+    let getQuery = `SELECT id,subdomain,status,created_at,payment_at,isSuper FROM am_register WHERE subdomain = ?`
 
     query(getQuery, [subDomain], (err, data) => {
         if (err) {
@@ -25,9 +30,13 @@ exports.checkPayment = (req, res, next) => {
 
             let singleData = data[0]
 
+            if (singleData?.isSuper === 1) {
+                return next();
+            }
+
             if (!singleData?.payment_at) {
 
-                const createdDate = singleData?.created_at;
+                const createdDate = singleData?.created_at ? new Date(singleData.created_at) : new Date();
 
                 const now = new Date();
 

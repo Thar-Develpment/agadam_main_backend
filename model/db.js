@@ -2,12 +2,13 @@ const mysql = require("mysql2");
 const config = require('../config/config')
 
 const db = mysql.createPool({
-  host: "localhost",
-  user: "u823453650_aadagam_user",
-  password: "7K=Jv0XR@>*xhVSIeFgniyOmMhyrziqxO",
-  database: "u823453650_aadagam_db",
-  port: "3306",
-  multipleStatements: true
+  host: config.dbInfo.host,
+  user: config.dbInfo.user,
+  password: config.dbInfo.password,
+  database: config.dbInfo.database,
+  port: config.dbInfo.port || 3306,
+  multipleStatements: true,
+  connectionLimit: 3
 });
 
 const query = (sql, params, callback) => {

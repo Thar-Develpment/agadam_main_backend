@@ -323,7 +323,18 @@ async function getSiteInfo(shopName) {
         if (objLen > 0) {
           delete data[0].password
         }
-        return resolve(data[0]);
+
+        const siteData = data[0];
+        const createdAt = siteData.created_at ? new Date(siteData.created_at) : new Date();
+        const trialEndsAt = new Date(createdAt.getTime() + 48 * 60 * 60 * 1000);
+        const isPaid = siteData.payment_at !== null && siteData.payment_at !== undefined;
+
+        siteData.is_paid = isPaid;
+        siteData.subscription_status = isPaid ? 'active' : (Date.now() >= trialEndsAt.getTime() ? 'expired' : 'trial');
+        siteData.trial_ends_at = trialEndsAt.toISOString();
+        siteData.server_time = new Date().toISOString();
+
+        return resolve(siteData);
       }
     });
   })
