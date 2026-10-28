@@ -4,9 +4,9 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET || "aadagam_jwt_secret_key_12345",
   dbInfo: {
     host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
-    user: process.env.MYSQLUSER || process.env.DB_USER || "root",
-    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "",
-    database: process.env.MYSQLDATABASE || process.env.DB_NAME || "aadagam_db",
+    user: process.env.MYSQLUSER || process.env.DB_USER || "u823453650_aadagam_user",
+    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "7K=Jv0XR@>*xhVSIeFgniyOmMhyrziqxO",
+    database: process.env.MYSQLDATABASE || process.env.DB_NAME || "u823453650_aadagam_db",
     port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
   },
 

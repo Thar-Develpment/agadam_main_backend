@@ -8,7 +8,7 @@ const db = mysql.createPool({
   database: config.dbInfo.database,
   port: config.dbInfo.port || 3306,
   multipleStatements: true,
-  connectionLimit: 3
+  connectionLimit: config.dbInfo.connectionLimit || 10
 });
 
 const query = (sql, params, callback) => {
