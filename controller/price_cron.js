@@ -133,7 +133,7 @@ const query = require("../model/db");
 
 cron.schedule('*/10 * * * 1-6', () => {
 
-  // getAndUpdateGoldAndSilverPrice()
+  getAndUpdateGoldAndSilverPrice()
 
 }, {
   scheduled: true,
